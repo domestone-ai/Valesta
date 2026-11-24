@@ -1,0 +1,20 @@
+name: Compliance
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install native dependencies (licence check)
+        run: npm ci --prefix native --ignore-scripts
+      - name: Install desktop dependencies (licence check)
+        run: npm ci --prefix desktop --ignore-scripts --no-audit --no-fund
+      - name: Licences, headers, secrets and data
+        run: node .github/scripts/compliance-check.mjs

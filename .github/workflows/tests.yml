@@ -1,0 +1,26 @@
+name: Build and tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  app:
+    name: Valesta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Build
+        run: python3 -I build.py
+      - name: Unit tests
+        run: for f in tests/*.test.js; do node --test "$f" || exit 1; done
+      # Development tools only (licences checked by the compliance check): ESLint and playwright-core, no browser download.
+      - name: Development tools
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Lint
+        run: npx --no-install eslint src/js desktop mcp tests e2e
+      - name: End-to-end tests (installed Chrome)
+        run: node --test e2e/*.test.js

@@ -1,0 +1,82 @@
+Valesta (Value Estate Assistant)
+Copyright (C) 2026 Domestone S.r.l.
+
+This program is licensed under the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your option)
+any later version (see LICENSE). The source code is at
+https://github.com/domestone-ai/Valesta.
+
+Additional term under section 7(e) of the AGPL-3.0: Domestone S.r.l. declines to
+grant rights under trademark law for the names "Domestone" and "Valesta" and for
+their logos (the files in brand/). See TRADEMARK_POLICY.md.
+
+Valesta includes or uses the third-party components below. Each component is under
+its own licence. The licence texts are in LICENSES/.
+
+1. Fonts embedded in src/css/fonts.css (Latin subsets in WOFF2 format, as served by
+   Google Fonts). SIL Open Font License 1.1. None of these fonts declares a
+   Reserved Font Name.
+   - Figtree. Copyright 2022 The Figtree Project Authors
+     (https://github.com/erikdkennedy/figtree)
+   - Inter. Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
+   - Literata. Copyright 2017 The Literata Project Authors
+     (https://github.com/googlefonts/literata)
+   - Montserrat. Copyright 2024 The Montserrat.Git Project Authors
+     (https://github.com/JulietaUla/Montserrat.git). The Valesta wordmark in brand/ is
+     drawn from Montserrat glyph outlines (weights 600 and 570).
+   - Cormorant Garamond. Copyright 2015 the Cormorant Project Authors
+     (github.com/CatharsisFonts/Cormorant)
+   - Open Sans. Copyright 2020 The Open Sans Project Authors
+     (https://github.com/googlefonts/opensans)
+   Fonts embedded in src/css/fonts-cjk.css (cut to the Chinese characters of the report by
+   tools/subset_cjk.py, WOFF2). SIL Open Font License 1.1.
+   - Noto Sans SC. Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font
+     Name 'Source' (https://github.com/notofonts/noto-cjk). The cut font keeps the name
+     Noto Sans SC and does not use the Reserved Font Name. LICENSES/OFL-1.1-NotoSansSC.txt.
+
+2. Base map tiles embedded in src/js/assets.js for the demo report.
+   © Instituto Geográfico Nacional de España (IGN). CC BY 4.0
+   (LICENSES/CC-BY-4.0.txt).
+
+3. Valesta for Android (native/android). The Android app (APK) includes these
+   libraries. The build downloads them; they are not in this repository.
+   - Capacitor (Ionic) and its Filesystem and Share plugins. Copyright (c) 2017-present
+     Drifty Co. MIT License (LICENSES/MIT-Capacitor.txt).
+   - Ionic Filesystem for Android (io.ionic.libs:ionfilesystem-android). Copyright (c)
+     2025 Ionic. MIT License (LICENSES/MIT-Ionic-Filesystem.txt).
+   - Apache Cordova framework (org.apache.cordova:framework), AndroidX libraries
+     (androidx.*), Kotlin standard library and coroutines (org.jetbrains.kotlin,
+     org.jetbrains.kotlinx), JetBrains annotations, JSpecify and Guava ListenableFuture.
+     Apache License 2.0 (LICENSES/Apache-2.0.txt).
+   - Gradle Wrapper (native/android/gradlew, gradlew.bat, gradle/wrapper/). Apache
+     License 2.0 (LICENSES/Apache-2.0.txt).
+
+4. Valesta for Windows (desktop/). The installed app includes:
+   - Electron. Copyright (c) Electron contributors, Copyright (c) 2013-2020 GitHub Inc.
+     MIT License. The installed app contains LICENSE.electron.txt.
+   - Chromium and its components, included in Electron. BSD 3-Clause License and other
+     licences, listed in LICENSES.chromium.html in the installed app.
+   The installer is built with electron-builder (MIT License) and NSIS (zlib/libpng
+   License). The build downloads them; they are not in this repository.
+
+5. The iOS shell (native/ios) is source code only, based on the Capacitor project
+   templates (MIT License). No iOS app is published.
+
+6. Services used at runtime, only after the user turns them on. They are not part of
+   Valesta.
+   - Map tiles, each with its terms and attribution:
+     Agenzia delle Entrate, Italian cadastral map (CC BY 4.0);
+     Instituto Geográfico Nacional de España, Mapa base (CC BY 4.0);
+     IGN France, Plan IGN (Licence Ouverte Etalab 2.0);
+     swisstopo, national maps (OGD swisstopo terms of use);
+     Kadaster / PDOK, BRT Achtergrondkaart (CC BY 4.0);
+     basemap.at (CC BY 4.0);
+     Kartverket, Topografisk (CC BY 4.0);
+     BKG, TopPlusOpen (Data licence Germany – attribution – version 2.0).
+   - Address search with OpenStreetMap Nominatim (OpenStreetMap Foundation).
+     © OpenStreetMap contributors, Open Database License 1.0.
+   - Geodata for the assistant: OpenStreetMap Overpass through Private.coffee
+     (© OpenStreetMap contributors, Open Database License 1.0) and the Sede Electrónica
+     del Catastro (Spain).
+   - AI providers chosen by the user, with the user's own account or key, or local
+     models.

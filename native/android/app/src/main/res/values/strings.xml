@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Valesta</string>
+    <string name="title_activity_main">Valesta</string>
+    <string name="package_name">com.domestone.valesta</string>
+    <string name="custom_url_scheme">com.domestone.valesta</string>
+</resources>

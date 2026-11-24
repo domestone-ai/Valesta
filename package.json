@@ -1,0 +1,19 @@
+{
+  "name": "valesta-dev",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development tools of Valesta: lint and end-to-end tests. Not part of the distributed app.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Domestone S.r.l.",
+  "scripts": {
+    "test": "node --test tests/",
+    "e2e": "node --test e2e/*.test.js",
+    "lint": "eslint src/js desktop mcp tests e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "playwright-core": "1.65.1"
+  }
+}

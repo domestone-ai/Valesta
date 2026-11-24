@@ -1,0 +1,19 @@
+{
+ "name": "Valesta",
+ "owner": "Domestone S.r.l.",
+ "colors": {
+  "tealDeep": "#0B4F47",
+  "teal": "#12796B",
+  "mint": "#12A37F",
+  "mintLight": "#5BE3B0"
+ },
+ "symbol": {
+  "grid": 64,
+  "concept": "Chiave di volta: an arch closed by a V-shaped keystone",
+  "source": "256-unit paths scaled by 0.25; see _brand-work/kit-2026-11-23/make_kit.py"
+ },
+ "symbolOnDark": "<g transform=\"scale(0.25)\"><path fill=\"#FFFFFF\" d=\"M34 146A94 94 0 0 1 95.98 57.62L114.09 93.82A54 54 0 0 0 74 146ZM34 153L74 153L74 212L34 212ZM222 146A94 94 0 0 0 160.02 57.62L141.91 93.82A54 54 0 0 1 182 146ZM222 153L182 153L182 212L222 212Z\"/><path fill=\"#5BE3B0\" d=\"M96 42L160 42L128 106Z\"/></g>",
+ "symbolOnLight": "<g transform=\"scale(0.25)\"><path fill=\"#0B4F47\" d=\"M34 146A94 94 0 0 1 95.98 57.62L114.09 93.82A54 54 0 0 0 74 146ZM34 153L74 153L74 212L34 212ZM222 146A94 94 0 0 0 160.02 57.62L141.91 93.82A54 54 0 0 1 182 146ZM222 153L182 153L182 212L222 212Z\"/><path fill=\"#12A37F\" d=\"M96 42L160 42L128 106Z\"/></g>",
+ "symbolSmallOnDark": "<g transform=\"scale(0.25)\"><path fill=\"#FFFFFF\" d=\"M34 146A94 94 0 0 1 90.39 59.85L108.32 95.71A54 54 0 0 0 74 146ZM34 159L74 159L74 212L34 212ZM222 146A94 94 0 0 0 165.61 59.85L147.68 95.71A54 54 0 0 1 182 146ZM222 159L182 159L182 212L222 212Z\"/><path fill=\"#5BE3B0\" d=\"M96 42L160 42L128 106Z\"/></g>",
+ "wordmark": "Montserrat 600 (570 on dark backgrounds), outlined, letter-spacing 0.155 cap height"
+}

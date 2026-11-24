@@ -1,0 +1,22 @@
+{
+  "name": "valesta-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Valesta native shells (Android, iOS) built with Capacitor around the Valesta web app",
+  "scripts": {
+    "sync": "node prepare-www.js && npx cap sync",
+    "android": "node prepare-www.js && npx cap sync android",
+    "ios": "node prepare-www.js && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/share": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.2"
+  }
+}

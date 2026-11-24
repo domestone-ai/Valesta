@@ -1,0 +1,57 @@
+{
+  "name": "valesta-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Valesta for Windows: the Valesta app in its own window, offline",
+  "author": "Domestone S.r.l.",
+  "license": "AGPL-3.0-or-later",
+  "main": "main.js",
+  "scripts": {
+    "start": "node prepare.js && electron .",
+    "dist": "node prepare.js && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.domestone.valesta",
+    "productName": "Valesta",
+    "copyright": "Copyright (C) 2026 Domestone S.r.l.",
+    "artifactName": "Valesta-Setup-${version}.${ext}",
+    "directories": {
+      "output": "../dist/windows",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "app/**"
+    ],
+    "extraFiles": [
+      { "from": "app/LICENSE", "to": "LICENSE.txt" },
+      { "from": "app/NOTICE", "to": "NOTICE.txt" },
+      { "from": "app/LICENSES", "to": "LICENSES" }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "legalTrademarks": "Valesta and Domestone are trademarks of Domestone S.r.l."
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Valesta",
+      "uninstallDisplayName": "Valesta"
+    }
+  }
+}

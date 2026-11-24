@@ -1,0 +1,13 @@
+{
+  "appId": "com.domestone.valesta",
+  "appName": "Valesta",
+  "webDir": "www",
+  "backgroundColor": "#F9F4EA",
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SystemBars": { "insetsHandling": "css", "initialViewportFitValueHint": "cover", "style": "DEFAULT" }
+  }
+}

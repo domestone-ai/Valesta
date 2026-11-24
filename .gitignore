@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+__pycache__/
+reports/
+.icons-stamp
+# native shells: generated or machine-specific files
+native/www/
+native/android/.gradle/
+native/android/build/
+native/android/app/build/
+native/android/local.properties
+native/android/capacitor-cordova-android-plugins/
+native/android/app/src/main/assets/public/
+native/ios/App/App/public/
+native/ios/App/build/
+native/ios/DerivedData/
+# Windows app: files copied from dist/ and native/assets by desktop/prepare.js
+desktop/app/
+desktop/build/
+# release signing: never commit keys
+native/keystore.properties
+*.jks
+*.keystore

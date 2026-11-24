@@ -1,0 +1,111 @@
+{
+  "name": "valesta",
+  "projectLicence": "AGPL-3.0",
+  "requiredFiles": [
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "CONTRIBUTING.md",
+    "CLA.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "TRADEMARK_POLICY.md"
+  ],
+  "licenceFiles": {
+    "LICENSE": "AGPL-3.0",
+    "LICENSES/CC-BY-4.0.txt": "CC-BY-4.0"
+  },
+  "readmeLicensing": [
+    "Valesta is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
+    "The names “Domestone” and “Valesta” and their logos are not licensed under AGPL-3.0. As an additional term under section 7(e) of the AGPL-3.0, Domestone S.r.l. declines to grant rights under trademark law for them. They remain the property of Domestone S.r.l.",
+    "Contributions are accepted only under the project Contributor License Agreement (CLA), which grants Domestone S.r.l. the right to use, maintain, distribute and relicense contributions in future versions."
+  ],
+  "headers": {
+    "extensions": [
+      ".js",
+      ".mjs",
+      ".cjs",
+      ".css",
+      ".html",
+      ".py",
+      ".ps1",
+      ".java",
+      ".swift"
+    ],
+    "mustMatch": [
+      "Copyright \\(C\\) 20\\d\\d(?:-20\\d\\d)? Domestone S\\.r\\.l\\.",
+      "GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or \\(at your option\\) any later version\\."
+    ],
+    "exclude": [
+      "native/ios/App/App/AppDelegate.swift",
+      "native/android/app/src/test/**",
+      "native/android/app/src/androidTest/**",
+      "native/node_modules/**",
+      "native/www/**",
+      "native/ios/App/CapApp-SPM/**",
+      "native/android/app/src/main/assets/public/**",
+      "native/ios/App/App/public/**"
+    ]
+  },
+  "allowedEmailDomains": [
+    "example.com",
+    "example.org",
+    "example.net",
+    "domestone.com"
+  ],
+  "dataScanExclude": [
+    "LICENSE",
+    "LICENSE-*",
+    "LICENSES/**",
+    ".github/scripts/**",
+    "**/package-lock.json",
+    "package-lock.json"
+  ],
+  "deniedTermHashes": [
+    "05da75beda71f4fd70d0138ac30b3bb1edee615f8f2775e356354c81df087525",
+    "0d3736b09279025ad0203ed86784bc5b3ed3f858086306744e5db67730e31136",
+    "477b8ea5219ce95bd5a5b472d5c41364e3709588c1f3c35115ec9326ca29e654",
+    "591f57be41bbd8565c8b6dfb391777cdb0f48cf8b30c718e1b34c5a9c5ee027e",
+    "61685c62e661fefadbf5b8d6263187ef4998491f99b3548c33b6dd6db137aa2c",
+    "6be304d3c19b6d62f21a860f600afd263b1e975e2853c3d91e63374cc3333197",
+    "71e033b4df68b0e283aaa5841c81574d3afb7b0a0220461315d11fb1a2d5ccfa",
+    "93f857ab30ecd6166f73ec1fc7a6346a4d3c19c9cedf505433adddee51362940",
+    "a8c82e2603534eeb17141850229721efaa74e10bf159c3bbf3408b1b2008cd9a",
+    "adac276c16916a0fc58ad787e5086b234ed42a12da0652a96877ba9d224bdd67",
+    "b8bb1888454f2ffd8b20f8dc74e3837346b86ef15ae8983319c2f8008400a877",
+    "e41ea3485960249c36aaa205cdc6c3e6f47d123736c1282ee2f1e236de307ddb"
+  ],
+  "syntheticJson": [],
+  "packageJson": [
+    "native/package.json",
+    "package.json",
+    "desktop/package.json"
+  ],
+  "requireCla": true,
+  "noticeMustMention": [
+    "Figtree",
+    "Inter",
+    "Literata",
+    "Montserrat",
+    "Cormorant Garamond",
+    "Open Sans",
+    "Instituto Geográfico Nacional",
+    "Capacitor",
+    "Gradle Wrapper",
+    "OpenStreetMap",
+    "Noto Sans SC",
+    "Electron",
+    "Chromium",
+    "AndroidX",
+    "Ionic"
+  ],
+  "ignoreDirs": [
+    ".gradle",
+    "DerivedData",
+    "Pods",
+    "build",
+    "capacitor-cordova-ios-plugins",
+    "www"
+  ],
+  "checkDevDependencies": true
+}

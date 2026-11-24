@@ -1,0 +1,76 @@
+apply plugin: 'com.android.application'
+
+// Release signing. The key stays outside the repository and its passwords are never written to disk:
+// native/build-android.ps1 -Release asks for them and passes them in environment variables (VALESTA_KEYSTORE,
+// VALESTA_KEY_ALIAS, VALESTA_KEYSTORE_PASSWORD, VALESTA_KEY_PASSWORD). A git-ignored native/keystore.properties
+// (storeFile, storePassword, keyAlias, keyPassword) also works.
+def keystorePropsFile = rootProject.file('../keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) { keystorePropsFile.withInputStream { keystoreProps.load(it) } }
+def signingValue = { String env, String prop -> System.getenv(env) ?: keystoreProps[prop] }
+def releaseStore = signingValue('VALESTA_KEYSTORE', 'storeFile')
+
+android {
+    namespace = "com.domestone.valesta"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.domestone.valesta"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 2
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (releaseStore) {
+            release {
+                def store = new File(releaseStore)
+                storeFile store.isAbsolute() ? store : rootProject.file('../' + releaseStore)
+                storePassword signingValue('VALESTA_KEYSTORE_PASSWORD', 'storePassword')
+                keyAlias signingValue('VALESTA_KEY_ALIAS', 'keyAlias') ?: 'valesta'
+                keyPassword signingValue('VALESTA_KEY_PASSWORD', 'keyPassword') ?: signingValue('VALESTA_KEYSTORE_PASSWORD', 'storePassword')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (releaseStore) { signingConfig signingConfigs.release }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

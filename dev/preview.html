@@ -1,0 +1,44 @@
+<!doctype html>
+<!--
+Copyright (C) 2026 Domestone S.r.l.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="es"><head><meta charset="utf-8"><title>Preview report</title>
+<link rel="stylesheet" href="../src/css/fonts.css"><link rel="stylesheet" href="../src/css/report.css"><style id="brand"></style>
+<style>body{margin:0;background:#E9EDF0;padding:10mm 0}</style></head>
+<body><main class="report" id="report"></main>
+<script src="../src/js/i18n.js"></script><script src="../src/js/engine.js"></script><script src="../src/js/data.js"></script><script src="../src/js/assets.js"></script>
+<script src="../src/js/charts.js"></script><script src="../src/js/report_i18n.js"></script><script src="../src/js/report.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  const st = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  if (q.get('lang')) st.meta.reportLang = q.get('lang');
+  if (q.get('brand') === 'demo') { st.brand = { name: 'Inmobiliaria Sol', logoMode: 'text', primary: '#8C2F39', accent: '#2E7D5B', showBand: true, tagline: 'Agencia independiente en la costa del Garraf' }; st.meta.office.name = 'Inmobiliaria Sol · Sitges'; }
+  if (q.has('photos')) st.photos = [1,2,3].map(i => ({ id:'p'+i, dataUrl:'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#9DB3C3"/><text x="400" y="300" font-size="60" text-anchor="middle" fill="#fff">Foto '+i+'</text></svg>'), caption:'Foto '+i, cover: i===1 }));
+  if (q.get('design')) st.design = Object.assign(st.design || {}, JSON.parse(q.get('design')));
+  if (q.has('custom')) st.customSections = [{ id: 'cs1', enabled: true, after: 'description', title: { es: 'Situación urbanística', it: 'Situazione urbanistica', en: 'Planning status' }, kicker: '', body: { es: ['Clasificación del suelo: **urbano consolidado** (a verificar en el planeamiento municipal).', '## Datos urbanísticos', '- Calificación: zona residencial plurifamiliar\n- Cédula de habitabilidad: vigente\n- Expedientes de disciplina urbanística: no constan', 'La información procede de fuentes públicas y debe verificarse en el Ayuntamiento antes de cualquier operación.'].join('\n\n') } }];
+  if (q.has('sig')) st.meta.advisor.signature = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  document.getElementById('brand').textContent = Report.brandCss(st);
+  const res = MCA.compute(st);
+  document.getElementById('report').innerHTML = Report.render(st, res);
+  if (!q.has('nofit')) document.fonts.ready.then(() => { window.__fit = Report.fitPages(document.getElementById('report'), { min: 0.8 }); });
+  const only = q.get('only');
+  if (only) { document.body.style.padding = '0'; document.body.style.background = '#fff'; document.querySelectorAll('.page').forEach(p => { if (p.dataset.page !== only) p.style.display = 'none'; else { p.style.margin = '0'; p.style.boxShadow = 'none'; } }); }
+  document.fonts.ready.then(() => {
+    const over = [];
+    document.querySelectorAll('.page').forEach(p => { const b = p.querySelector('.pg-body'); if (b && b.scrollHeight > b.clientHeight + 1) { p.classList.add('overflow'); over.push(p.dataset.page + ':' + (b.scrollHeight - b.clientHeight)); } });
+    window.__overflow = over; window.__pages = document.querySelectorAll('.page').length;
+  });
+</script></body></html>

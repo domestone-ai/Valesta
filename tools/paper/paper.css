@@ -1,0 +1,242 @@
+/*
+ * Copyright (C) 2026 Domestone S.r.l.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+/* The scientific paper of Valesta: one stylesheet for the screen (HTML) and for print (A4 PDF). The typography is that of
+   the Valesta reports, Cormorant Garamond for titles and Inter for text, and the colours are those of the brand
+   (brand/README.md): teal deep for titles and rules, teal for numbers, mint only in graphics. */
+:root {
+  --teal-deep: #0B4F47; --teal: #12796B; --mint: #12A37F; --mint-light: #5BE3B0;
+  --ink: #1A2229; --ink-2: #3F4B55; --ink-3: #5A6670; --line: #D9E1E4; --line-2: #EBF0F1;
+  --tint: #F0F6F5; --tint-2: #E2EFEC; --paper: #FFFFFF;
+  --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --math: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Noto Sans Math', math;
+  --mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --side: 0px;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 17px/1.66 var(--sans);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+a { color: var(--teal); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--teal-deep); }
+a.cite { text-decoration: none; white-space: nowrap; }
+a.cite:hover { text-decoration: underline; }
+strong { font-weight: 600; }
+sub, sup { font-size: .72em; line-height: 0; position: relative; vertical-align: baseline; }
+sub { bottom: -.24em; }
+sup { top: -.46em; }
+code { font: .84em/1.4 var(--mono); background: var(--line-2); padding: .08em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+math { font-family: var(--math); }
+/* Chromium builds the PDF bookmarks from the laid-out text of the headings: spaces at line ends and after the section
+   number must survive the layout, and labels use small capitals rather than upper-case text. */
+h1, h2, h3 { white-space: pre-wrap; }
+.num { white-space: pre; }
+.colon { color: transparent; }
+.nw { white-space: nowrap; }
+
+/* ===== Cover ===== */
+.cover { position: relative; overflow: hidden; color: #FFFFFF; background: #0B4F47;
+  background-image: radial-gradient(120% 95% at 100% 100%, #11665B 0%, rgba(17, 102, 91, 0) 62%), linear-gradient(165deg, #0C5249 0%, #093E38 100%); }
+.cover-art { position: absolute; right: -8%; bottom: -34%; width: 72%; max-width: 860px; height: auto; pointer-events: none; }
+.cover-in { position: relative; max-width: 1088px; margin: 0 auto; padding: 44px 24px 40px; }
+.cover-logo { display: block; width: 196px; height: auto; }
+.cover-kicker { margin: 96px 0 18px; font: 600 12px/1.2 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--mint-light); }
+.cover-title { margin: 0; max-width: 15em; font: 600 clamp(38px, 5.6vw, 66px)/1.02 var(--serif); letter-spacing: -.012em; text-wrap: balance; }
+.cover-title .sub { display: block; margin-top: .4em; font-size: .54em; font-style: italic; font-weight: 500; line-height: 1.18; letter-spacing: 0; color: rgba(255, 255, 255, .86); }
+.cover-rule { display: block; width: 56px; height: 4px; margin: 34px 0 0; background: var(--mint-light); }
+.cover-meta { display: flex; flex-wrap: wrap; gap: 16px 56px; margin: 64px 0 0; padding: 20px 0 0; border-top: 1px solid rgba(255, 255, 255, .22); }
+.cover-meta div { min-width: 0; }
+.cover-meta dt { font: 600 11px/1.3 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+.cover-meta dd { margin: 6px 0 0; font: 500 15px/1.4 var(--sans); color: #FFFFFF; }
+
+/* ===== Document flow: a side column for numbers and keys, a text column, wide tables and figures ===== */
+.doc { max-width: 1088px; margin: 0 auto; padding: 0 24px 80px; }
+.doc > :is(p, ul, ol, h3, .eq, .note, .refs) { margin-left: var(--side); max-width: 736px; }
+.doc > p { margin-top: 0; margin-bottom: 1em; text-wrap: pretty; hanging-punctuation: first; }
+.doc > ul { list-style: none; padding: 0; margin-top: 0; margin-bottom: 1.1em; }
+.doc ul > li { position: relative; padding-left: 22px; margin: .42em 0; text-wrap: pretty; }
+.doc ul > li::before { content: ''; position: absolute; left: 3px; top: .64em; width: 9px; height: 7px; background: var(--mint);
+  clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.doc ul ul { list-style: none; padding: 0; margin: .3em 0; }
+.doc ul ul > li::before { background: var(--line); }
+.doc li > strong:first-child, .doc > p > strong:first-child { color: var(--teal-deep); }
+
+.doc > h2 { position: relative; margin: 76px 0 24px; padding: 26px 0 0 var(--side);
+  font: 600 36px/1.12 var(--serif); letter-spacing: -.006em; color: var(--teal-deep); text-wrap: balance; }
+/* the rule above a section is drawn by a pseudo-element: a top border on a positioned heading makes Chromium leave an
+   empty piece of the heading, with the rule and the bookmark, at the foot of the previous page; 2 px below the top
+   edge, a rule never lies on the line where the page breaks, which Chromium paints on both pages */
+.doc > h2::before { content: ''; position: absolute; left: 0; right: 0; top: 2px; border-top: 1px solid var(--line); }
+.front > h2::before { content: none; }
+.doc > h2 .num { color: var(--teal); font-variant-numeric: lining-nums; }
+.doc > h3 { margin-top: 2.1em; margin-bottom: .5em; font: 600 19px/1.35 var(--sans); letter-spacing: -.005em; color: var(--teal-deep); }
+.doc > h3 .num { color: var(--teal); font-variant-numeric: tabular-nums; }
+
+.eq { display: flex; align-items: center; gap: 18px; margin-top: 1.1em; margin-bottom: 1.25em; overflow-x: auto; overflow-y: hidden; }
+.eq math { flex: 1 1 auto; font-size: 1.18em; }
+.eq .eq-no { flex: none; font: 400 14px/1 var(--sans); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.note { margin-top: 1.3em; margin-bottom: 1.4em; padding: 16px 22px 16px 20px; background: var(--tint); border-left: 4px solid var(--mint); border-radius: 0 8px 8px 0; }
+.note p { margin: 0; }
+.note p + p { margin-top: .7em; }
+
+.tbl { margin: 30px 0 34px; }
+.tscroll { overflow-x: auto; }
+.tbl.narrow { margin-left: var(--side); max-width: 736px; }
+.tcap { margin: 0 0 12px var(--side); max-width: 736px; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+.tbl.narrow .tcap { margin-left: 0; }
+/* on screen the caption of the table is read by screen readers, and the copy above the scrolling area is shown */
+.tbl caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.38; font-variant-numeric: tabular-nums lining-nums; }
+.lbl { font-weight: 700; color: var(--teal-deep); }
+.tbl th { padding: 9px 10px; text-align: left; vertical-align: bottom; font-weight: 600; color: var(--teal-deep); white-space: nowrap;
+  border-top: 2px solid var(--teal-deep); border-bottom: 1px solid var(--teal-deep); }
+.tbl td { padding: 8px 10px; vertical-align: top; border-bottom: 1px solid var(--line-2); }
+.tbl tbody tr:last-child td { border-bottom: 2px solid var(--teal-deep); }
+.tbl .num { text-align: right; white-space: nowrap; }
+.tbl .gap { width: 28px; padding: 0; border-bottom-color: transparent; }
+.tbl tbody tr:last-child td.gap { border-bottom-color: transparent; }
+.tbl tbody tr:hover td:not(.gap) { background: var(--tint); }
+
+.fig { margin: 34px 0 38px; }
+.fig svg { display: block; width: 100%; height: auto; }
+.fig figcaption { margin: 14px 0 0 var(--side); max-width: 736px; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+
+/* ===== Front matter: abstract, keywords, contents, colophon ===== */
+.doc.front { padding-top: 64px; }
+.front > .label, .toc .label { margin: 0 0 12px var(--side); font: 600 16.5px/1.2 var(--sans); font-variant-caps: all-small-caps; letter-spacing: .14em; color: var(--teal); border: 0; padding: 0; }
+.doc > p.lead { font-size: 18.5px; line-height: 1.62; color: var(--ink); }
+.doc > p.kw { font-size: 15px; color: var(--ink-2); }
+.doc > p.kw strong { color: var(--teal-deep); }
+.toc { margin: 48px 0 0; }
+.toc ol { list-style: none; margin: 0 0 0 var(--side); padding: 0; columns: 2; column-gap: 44px; max-width: 800px; }
+.toc li { break-inside: avoid; }
+.toc a { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line-2); color: var(--ink); text-decoration: none; }
+.toc a:hover .t { color: var(--teal); }
+.toc .n { flex: none; min-width: 2.1em; color: var(--teal); font-weight: 600; font-variant-numeric: tabular-nums; }
+.toc .l2 a { font-weight: 600; }
+.toc .l3 a { padding-left: 1.2em; font-size: .94em; color: var(--ink-2); }
+.toc .l3 .n { font-weight: 500; }
+.toc .pg { display: none; }
+.colophon { margin: 48px 0 0 var(--side); max-width: 736px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13.5px; line-height: 1.55; color: var(--ink-3); }
+.colophon p { margin: 0 0 .5em; }
+.colophon a { color: var(--ink-2); }
+
+/* ===== References ===== */
+.refs { list-style: none; padding: 0; font-size: 15px; line-height: 1.5; }
+.doc .refs > li { padding-left: 0; margin: 0 0 .85em; }
+.doc .refs > li::before { content: none; }
+.refs .key { display: block; font: 600 12.5px/1.4 var(--sans); letter-spacing: .03em; color: var(--teal); }
+.refs .st { color: var(--ink-3); }
+
+/* ===== Footer of the web page ===== */
+.site-foot { border-top: 1px solid var(--line); }
+.site-foot div { max-width: 1088px; margin: 0 auto; padding: 22px 24px 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between;
+  font-size: 13px; color: var(--ink-3); }
+.site-foot strong { color: var(--teal-deep); }
+
+/* ===== Wide screens: the side column ===== */
+@media (min-width: 1000px) {
+  .doc { --side: 232px; }
+  .doc > h2 .num { position: absolute; left: 0; width: 200px; text-align: right; }
+  .refs > li { position: relative; }
+  .refs .key { position: absolute; left: calc(-1 * var(--side)); width: calc(var(--side) - 32px); text-align: right; }
+}
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .cover-in { padding: 32px 20px 30px; }
+  .cover-logo { width: 156px; }
+  .cover-kicker { margin-top: 64px; }
+  .cover-meta { gap: 14px 32px; margin-top: 44px; }
+  .doc { padding: 0 20px 64px; }
+  .doc > h2 { font-size: 29px; margin-top: 56px; }
+  .toc ol { columns: 1; }
+  .tbl table { font-size: 13.5px; }
+  .eq math { font-size: 1.05em; }
+}
+
+/* ===== Print: A4, the cover on its own page, a side column of 44 mm ===== */
+@media print {
+  html, body { background: #FFFFFF; }
+  /* Chromium gives no Unicode to glyph alternates in the PDF (contextual forms, tabular figures): the text would lose
+     those characters for search, copy and screen readers, so print uses the default glyphs */
+  body { font-size: 9.25pt; line-height: 1.52; font-feature-settings: 'calt' 0; }
+  .tbl table, .doc > h3 .num, .eq .eq-no, .toc .n, .toc .pg { font-variant-numeric: normal; }
+  a { color: inherit; text-decoration: none; }
+  a.cite { color: var(--teal); }
+  .doc { max-width: none; margin: 0; padding: 0; --side: 44mm; }
+  .doc > :is(p, ul, ol, h3, .eq, .note, .refs) { max-width: none; }
+  .doc > h2 .num { position: absolute; left: 0; width: 38mm; text-align: right; }
+  .refs > li { position: relative; }
+  .refs .key { position: absolute; left: -44mm; width: 39mm; text-align: right; font-size: 6.6pt; line-height: 1.75; }
+  p, li { orphans: 3; widows: 3; }
+
+  .cover { page: cover; width: 210mm; height: 297mm; break-after: page; }
+  .cover-art { right: -26mm; bottom: -64mm; width: 190mm; max-width: none; }
+  .cover-in { height: 297mm; max-width: none; margin: 0; padding: 21mm 20mm 19mm; display: flex; flex-direction: column; }
+  .cover-logo { width: 58mm; }
+  .cover-kicker { margin: auto 0 6mm; font-size: 7.6pt; }
+  .cover-title { font-size: 39pt; max-width: 156mm; }
+  .cover-rule { width: 15mm; height: 1.1mm; margin-top: 10mm; }
+  .cover-meta { margin-top: 26mm; padding-top: 5mm; gap: 3mm 15mm; }
+  .cover-meta dt { font-size: 6.6pt; }
+  .cover-meta dd { margin-top: 1.4mm; font-size: 9.5pt; }
+
+  .doc.front { padding-top: 0; break-after: page; min-height: 255mm; display: flex; flex-direction: column; }
+  .front > .label, .toc .label { margin-bottom: 3mm; font-size: 9.6pt; }
+  .doc > p.lead { font-size: 10.1pt; line-height: 1.56; }
+  .doc > p.kw { font-size: 8.2pt; }
+  .toc { margin-top: 8mm; }
+  .toc ol { max-width: none; margin-left: 0; column-gap: 9mm; }
+  .toc .label { margin-left: 0; }
+  .toc a { padding: .85mm 0; gap: 2.4mm; font-size: 8.3pt; }
+  .toc .l3 a { font-size: 8pt; }
+  .toc .pg { display: block; margin-left: auto; min-width: 6mm; text-align: right; color: var(--ink-3); font-weight: 500; }
+  .colophon { margin-top: auto; padding-top: 3.2mm; font-size: 6.9pt; line-height: 1.5; }
+
+  .doc > h2 { margin: 9mm 0 4mm; padding-top: 4.5mm; font-size: 20pt; break-after: avoid; break-inside: avoid; }
+  .doc > h3 { margin: 5.4mm 0 1.6mm; font-size: 10.2pt; break-after: avoid; break-inside: avoid; }
+  .doc > p { margin-bottom: 2.3mm; }
+  .doc ul > li { padding-left: 4.6mm; margin: 1mm 0; }
+  .doc ul > li::before { left: .6mm; width: 1.9mm; height: 1.45mm; top: .62em; }
+  /* the padding keeps the ink of tall formulas inside the box, so that none of it is drawn on the previous page */
+  .eq { margin: 1.6mm 0 2mm var(--side); padding: 1.8mm 0; overflow: visible; break-inside: avoid; }
+  .eq math { font-size: 11.2pt; }
+  .eq .eq-no { font-size: 8.2pt; }
+  .note { margin: 3.6mm 0 4mm var(--side); padding: 3.2mm 4.6mm 3.2mm 4.2mm; border-left-width: .9mm; break-inside: avoid; }
+  .tbl { margin: 5mm 0 6mm; break-inside: avoid; }
+  .tscroll { overflow: visible; }
+  .tcap { display: none; }
+  .tbl table { font-size: 8pt; }
+  .tbl caption { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; caption-side: top; text-align: left;
+    padding: 0 0 2.6mm var(--side); font-size: 8.1pt; line-height: 1.5; color: var(--ink-2); }
+  .tbl.narrow caption { padding-left: 0; }
+  .tbl th { padding: 1.6mm 2mm; border-top-width: .5mm; border-bottom-width: .22mm; }
+  .tbl td { padding: 1.35mm 2mm; border-bottom-width: .15mm; }
+  .tbl tbody tr:last-child td { border-bottom-width: .5mm; }
+  .tbl .gap { width: 5mm; }
+  .fig { margin: 5mm 0 6mm; break-inside: avoid; }
+  .fig figcaption { margin-top: 2.6mm; font-size: 8.1pt; }
+  .refs { font-size: 8.2pt; line-height: 1.5; }
+  .doc .refs > li { margin-bottom: 2.2mm; break-inside: avoid; }
+  .break-before { break-before: page; }
+  .site-foot { display: none; }
+}

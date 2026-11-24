@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the compliance check before each commit. Enable once with: git config core.hooksPath .githooks
+node .github/scripts/compliance-check.mjs || { echo "Commit blocked by the compliance check (see messages above)."; exit 1; }
