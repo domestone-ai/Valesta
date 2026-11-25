@@ -30,15 +30,19 @@ Get the files from the [latest release](https://github.com/domestone-ai/Valesta/
 
 | Platform | File | Requirements |
 |---|---|---|
-| Windows | `Valesta-Setup-1.0.0.exe` | Windows 10 or 11, 64-bit |
-| Android | `Valesta-1.0.0.apk` | Android 7.0 or later |
-| AI subscription (optional) | `Valesta-MCP-1.0.0.zip` | Node.js 20 or later. See [AI assistant](#ai-assistant). |
+| Windows | `Valesta-Setup-1.1.0.exe` | Windows 10 or 11, 64-bit |
+| Android | `Valesta-1.1.0.apk` | Android 7.0 or later |
+| AI subscription (optional) | `Valesta-MCP-1.1.0.zip` | Node.js 20 or later. See [AI assistant](#ai-assistant). |
 
 `SHA256SUMS.txt` in the release gives the checksum of each file.
 
+On a Mac, an iPhone, an iPad or any computer with a browser, use the **web app** at
+[domestone-ai.github.io/Valesta](https://domestone-ai.github.io/Valesta/). See
+[Use on a Mac, iPhone or iPad](#use-on-a-mac-iphone-or-ipad).
+
 ### Install on Windows
 
-1. Download `Valesta-Setup-1.0.0.exe`.
+1. Download `Valesta-Setup-1.1.0.exe`.
 2. Open the file.
 3. If Windows shows **Windows protected your PC**, select **More info**, then **Run anyway**. This message shows
    because the installer has no code-signing certificate. Do this only for a file from this repository.
@@ -47,10 +51,23 @@ Get the files from the [latest release](https://github.com/domestone-ai/Valesta/
 
 ### Install on Android
 
-1. On the phone or tablet, download `Valesta-1.0.0.apk`.
+1. On the phone or tablet, download `Valesta-1.1.0.apk`.
 2. Open the file.
 3. If Android asks, let your browser or file manager install apps.
 4. Select **Install**.
+
+### Use on a Mac, iPhone or iPad
+
+1. Open [domestone-ai.github.io/Valesta](https://domestone-ai.github.io/Valesta/) in Safari, Chrome, Edge or Firefox.
+2. Install it as an app (optional):
+   - Mac with macOS 14 or later, Safari: select **File** › **Add to Dock**.
+   - iPhone or iPad, Safari: select **Share** › **Add to Home Screen**.
+   - Chrome or Edge: select **Install Valesta** in the address bar or in the menu.
+3. Open Valesta from the Dock, the Home Screen or the browser. After the first start, the web app works offline.
+
+The web app keeps your valuations in the browser of that device. A browser can delete the data of a website that
+you do not open for some time (Safari: after 7 days of use without a visit). Thus install the web app as in step 2,
+and save each valuation to a file with **Save**.
 
 The app works offline. Your valuations stay on your device.
 
@@ -155,9 +172,9 @@ node .github/scripts/compliance-check.mjs             # licences, headers, secre
 | Single-file app | `python -I build.py` | `dist/Valesta.html`: open it in a browser, also offline |
 | Web app (PWA) | `python -I build.py` | `dist/Web/`: put it on a web server with HTTPS |
 | MCP server | `python -I build.py` | `dist/mcp/` |
-| Windows app | `npm --prefix desktop ci`, then `npm --prefix desktop run dist` | `dist/windows/Valesta-Setup-1.0.0.exe` |
+| Windows app | `npm --prefix desktop ci`, then `npm --prefix desktop run dist` | `dist/windows/Valesta-Setup-1.1.0.exe` |
 | Android app (test) | `.\native\build-android.ps1` | `dist/android/Valesta-1.0.0-debug.apk` |
-| Android app (release) | `.\native\build-android.ps1 -NewKey` once, then `.\native\build-android.ps1 -Release` | `dist/android/Valesta-1.0.0.apk` and `.aab` |
+| Android app (release) | `.\native\build-android.ps1 -NewKey` once, then `.\native\build-android.ps1 -Release` | `dist/android/Valesta-1.1.0.apk` and `.aab` |
 
 The release key of the Android app stays outside the repository. The build asks for its password and does not write it
 to disk. The iOS shell (`native/ios`) is source code only. We do not build or test it.
@@ -248,7 +265,7 @@ A local model keeps all the data on your computer.
 ### Mode C: connect the MCP server to your AI app
 
 1. Install [Node.js](https://nodejs.org) 20 or later.
-2. Download `Valesta-MCP-1.0.0.zip` from the [latest release](https://github.com/domestone-ai/Valesta/releases/latest)
+2. Download `Valesta-MCP-1.1.0.zip` from the [latest release](https://github.com/domestone-ai/Valesta/releases/latest)
    and extract it, for example to `C:\Valesta`. Or build it: `python -I build.py` makes `dist/mcp`.
 3. Add the server to your AI app. For Claude Desktop, add this text to `claude_desktop_config.json`:
 
@@ -288,6 +305,9 @@ CLI, Cursor, VS Code, LM Studio), data protection and the solutions to problems.
   - the AI assistant, with your own provider account.
 - Exported HTML reports contain their maps as images. A person who opens them contacts no outside service.
 - The MCP server has the same defaults.
+- GitHub Pages serves the web app. GitHub records the IP address of each visit for security
+  ([GitHub Docs](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)). After
+  that, the web app works like the other versions: no data go to an outside service until you turn that service on.
 - The demo valuation and the example agencies are fictitious.
 
 ## Support and feedback

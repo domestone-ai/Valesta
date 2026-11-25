@@ -33,7 +33,7 @@ import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "dist")
-VERSION = "1.0"
+VERSION = "1.1"
 
 PARTS = {
     "FONTS_CSS": "src/css/fonts.css", "FONTS_CJK_CSS": "src/css/fonts-cjk.css", "REPORT_CSS": "src/css/report.css", "APP_CSS": "src/css/app.css",

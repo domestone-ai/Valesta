@@ -5,10 +5,13 @@ This file records the changes of each version of Valesta that users can see.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version numbers follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-25
 
 ### Added
 
+- **Web app online** at [domestone-ai.github.io/Valesta](https://domestone-ai.github.io/Valesta/), also for Mac,
+  iPhone and iPad. Each release publishes it on GitHub Pages. You can install it as an app from Safari (Add to Dock,
+  Add to Home Screen), Chrome or Edge. It works offline.
 - **Style and brand in six sections**: Profile, Report model, Brand, Cover, Type and spacing, Pages. Each section
   says what it does. The preview shows the page that the section changes. The arrow keys, Home and End move between
   the sections.
@@ -40,6 +43,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 - **New profile** works in the Windows app. The app asks for names in a window of its own.
 - A white cover background stays white. Before, the cover used the main colour made darker, with white texts.
 - The profile cards show the fonts that the report uses.
+
+### Known limitations
+
+- There is no Mac, iPhone or iPad app yet. Use the web app.
+- In a browser, save each valuation to a file: a browser can delete the data of a website that you do not open for
+  some time.
+- The installers have no code-signing certificate.
 
 ## [1.0.0] - 2026-11-24
 
@@ -174,4 +184,5 @@ develop and test Valesta for Windows and Android.
   installation.
 - Check the terms of use of the map and address services for your use.
 
+[1.1.0]: https://github.com/domestone-ai/Valesta/releases/tag/v1.1.0
 [1.0.0]: https://github.com/domestone-ai/Valesta/releases/tag/v1.0.0

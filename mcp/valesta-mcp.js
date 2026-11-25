@@ -58,7 +58,7 @@ for (const dir of [path.join(HERE, 'brand'), path.join(ROOT, 'brand')]) {
   }
 }
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const argv = process.argv.slice(2);
 const flag = (k) => argv.includes(k);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };

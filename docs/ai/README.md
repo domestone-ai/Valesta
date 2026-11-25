@@ -250,7 +250,7 @@ Get the server in one of these two ways.
 
 **Download the server (recommended)**
 
-1. Download `Valesta-MCP-1.0.0.zip` from the
+1. Download `Valesta-MCP-1.1.0.zip` from the
    [latest release](https://github.com/domestone-ai/Valesta/releases/latest).
 2. Extract the file to a permanent location, for example `C:\Valesta`.
 3. Make sure that the folder has the folders `mcp` and `Web` in it.

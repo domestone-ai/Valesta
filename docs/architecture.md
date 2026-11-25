@@ -24,9 +24,10 @@ flowchart LR
   build --> mcp[dist/mcp<br/>MCP server]
   single --> desktop[desktop/<br/>Electron + NSIS]
   web --> native[native/<br/>Capacitor + Gradle]
-  desktop --> exe[Valesta-Setup-1.0.0.exe<br/>Windows]
-  native --> apk[Valesta-1.0.0.apk / .aab<br/>Android]
-  mcp --> zip[Valesta-MCP-1.0.0.zip<br/>AI app of a subscription]
+  desktop --> exe[Valesta-Setup-1.1.0.exe<br/>Windows]
+  native --> apk[Valesta-1.1.0.apk / .aab<br/>Android]
+  mcp --> zip[Valesta-MCP-1.1.0.zip<br/>AI app of a subscription]
+  web --> pages[GitHub Pages<br/>web app for Mac, iPhone, iPad and browsers]
 ```
 
 ## Design principles
