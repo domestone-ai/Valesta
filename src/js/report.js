@@ -138,7 +138,74 @@
     if (!(typeof out.coverImage === 'string' && SAFE_IMG.test(out.coverImage))) out.coverImage = null;
     if (!WATERMARKS.includes(out.watermark)) out.watermark = '';
     out.ink = hex(out.ink, DEFAULT_DESIGN.ink);
+    out.layers = coverModel(d);
     return out;
+  }
+  // ---------- cover layers ----------
+  // A cover is a stack of layers: background, shade (over a map or a photo), motif, logo and text. Version 1.0.0 stored
+  // a style (map, photo, pattern, minimal) with a few options; such covers become the layers that give the same look.
+  // Colours are a hex value or a token of the brand palette, so that a cover follows the brand until the user picks a
+  // colour of their own.
+  const COVER_BG = ['solid', 'gradient', 'map', 'photo'];
+  const COVER_SHAPES = ['linear', 'radial'];
+  const SHADE_MODES = ['frame', 'full', 'bottom', 'top'];
+  const MOTIFS = ['none', 'lines', 'grid', 'band'];
+  const LOGO_POS = ['tl', 'tc', 'tr', 'bl'];
+  const LOGO_PLATES = ['auto', 'on', 'off'];
+  const TEXT_COLORS = ['auto', 'light', 'dark'];
+  const COLOR_TOKENS = ['brand', 'brandDeep', 'accent', 'white', 'ink'];
+  const pick = (v, list, d) => (list.includes(v) ? v : d);
+  const colorTok = (v, d) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : COLOR_TOKENS.includes(v) ? v : d);
+  const bounded = (v, lo, hi, d) => { const n = Number(v); return v === '' || v == null || !isFinite(n) ? d : Math.max(lo, Math.min(hi, Math.round(n))); };
+  function coverModel(design) {
+    const d = design || {};
+    const cv = d.cover && typeof d.cover === 'object' && !Array.isArray(d.cover) ? d.cover : {};
+    const old = d.coverStyle;
+    const style = LEGACY_COVERS[old] || (COVER_STYLES.includes(old) ? old : 'map');
+    const grid = (cv.pattern || (old === 'blueprint' ? 'grid' : 'lines')) === 'grid';
+    const solid = (cv.fill || (old === 'solid' || old === 'blueprint' ? 'solid' : 'gradient')) === 'solid';
+    const veil = cv.veil === '' || cv.veil == null || !isFinite(+cv.veil) ? 1 : Math.max(0, Math.min(1, +cv.veil));
+    const base = {
+      type: style === 'photo' || style === 'map' ? style : style === 'minimal' || solid ? 'solid' : 'gradient',
+      shape: style === 'pattern' && grid && !solid ? 'radial' : 'linear',
+      c1: style === 'minimal' ? 'white' : 'brandDeep',
+      motif: style === 'pattern' ? (grid ? 'grid' : 'lines') : style === 'minimal' ? 'band' : 'none',
+    };
+    const layer = (k) => (cv[k] && typeof cv[k] === 'object' && !Array.isArray(cv[k]) ? cv[k] : {});
+    const B = layer('bg'), S = layer('shade'), M = layer('motif'), L = layer('logo'), X = layer('text');
+    return {
+      bg: { type: pick(B.type, COVER_BG, base.type), shape: pick(B.shape, COVER_SHAPES, base.shape), c1: colorTok(B.c1, base.c1),
+        c2: colorTok(B.c2, 'brand'), angle: bounded(B.angle, 0, 360, 155) },
+      shade: { color: colorTok(S.color, 'brandDeep'), opacity: bounded(S.opacity, 0, 100, Math.round(veil * 100)), mode: pick(S.mode, SHADE_MODES, 'frame') },
+      motif: { type: pick(M.type, MOTIFS, base.motif) },
+      logo: { size: bounded(L.size, 6, 30, 14), pos: pick(L.pos, LOGO_POS, 'tl'), plate: pick(L.plate, LOGO_PLATES, 'auto') },
+      text: { color: pick(X.color, TEXT_COLORS, 'auto'), align: pick(X.align, ['left', 'center'], 'left') },
+    };
+  }
+  // Colour of a cover token or hex value, contrast ratio (WCAG 2.x) and the text colour of a cover.
+  function colorOf(v, P, D) {
+    if (/^#[0-9a-f]{6}$/i.test(String(v))) return String(v).toLowerCase();
+    return { brand: P.brand, brandDeep: P.deep, accent: P.accent, white: '#ffffff', ink: D.ink }[v] || P.deep;
+  }
+  const luminance = (h) => rgb(h).map((c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); })
+    .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+  function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  // The background behind the cover texts: the middle of a gradient; for a map or a photo, the shade over a middle tone
+  // (the image itself is not measured). A shade from the top covers the texts only a little.
+  const MID_TONE = '#7f7f7f';
+  function coverBackground(L, P, D) {
+    const c1 = colorOf(L.bg.c1, P, D);
+    if (L.bg.type === 'solid') return c1;
+    if (L.bg.type === 'gradient') return mix(c1, colorOf(L.bg.c2, P, D), 0.5);
+    return mix(MID_TONE, colorOf(L.shade.color, P, D), (L.shade.opacity / 100) * (L.shade.mode === 'top' ? 0.25 : 1));
+  }
+  // Light or dark text: the one with the higher contrast, unless the user forces it.
+  function coverInk(L, P, D) {
+    const bg = coverBackground(L, P, D);
+    const light = '#ffffff';
+    const useLight = L.text.color === 'light' || (L.text.color === 'auto' && contrast(light, bg) >= contrast(D.ink, bg));
+    const ink = useLight ? light : D.ink;
+    return { ink, dark: !useLight, bg, ratio: Math.round(contrast(ink, bg) * 10) / 10 };
   }
   // Fonts an exported report carries: the design's families and, for a report in Chinese, Noto Sans SC (src/css/fonts-cjk.css).
   const usedFonts = (state) => {
@@ -1332,5 +1399,6 @@ ${h3(T.uncLooTitle, T.uncLooSub)}
   const dateEs = (iso) => I().dateLong(iso, 'es');
 
   return { render, sensitivityRows, uncertaintyKpis, inlineImages, fileTitle, autoTexts: autoTextsFor, documentHtml, documentTitle, brandCss, palette, numberToWords, dateEs, SECTION_IDS, roomGroup,
-    designOf, usedFonts, filterFontCss, fitPages, FONT_STACKS, EMBEDDED_FONTS, LEGACY_FONTS, SECTION_KEYS, PRESETS, DEFAULT_DESIGN, COVER_STYLES, coverTexts };
+    designOf, usedFonts, filterFontCss, fitPages, FONT_STACKS, EMBEDDED_FONTS, LEGACY_FONTS, SECTION_KEYS, PRESETS, DEFAULT_DESIGN, COVER_STYLES, coverTexts,
+    coverModel, colorOf, contrast, coverInk };
 });

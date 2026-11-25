@@ -1157,3 +1157,64 @@ test('report models: client and complete (bank and valuer); older and unknown na
   assert.equal(Report.PRESETS.client.letter, undefined, 'the client report keeps the cover letter');
   assert.deepEqual(Report.PRESETS.full, {}, 'the complete report shows every section');
 });
+
+test('cover model: 1.0.0 covers become layers with the same look', () => {
+  const m = (design) => Report.coverModel(design);
+  const map = m({ coverStyle: 'map' });
+  assert.deepEqual(map.bg, { type: 'map', shape: 'linear', c1: 'brandDeep', c2: 'brand', angle: 155 });
+  assert.deepEqual(map.shade, { color: 'brandDeep', opacity: 100, mode: 'frame' });
+  assert.deepEqual(map.motif, { type: 'none' });
+  assert.deepEqual(map.logo, { size: 14, pos: 'tl', plate: 'auto' });
+  assert.deepEqual(map.text, { color: 'auto', align: 'left' });
+  assert.deepEqual(m({}), map, 'no design: the map cover');
+  assert.equal(m({ coverStyle: 'map', cover: { veil: 0.4 } }).shade.opacity, 40);
+  assert.equal(m({ coverStyle: 'photo' }).bg.type, 'photo');
+  assert.equal(m({ coverStyle: 'photo' }).shade.mode, 'frame');
+  assert.deepEqual(m({ coverStyle: 'pattern' }).bg, { type: 'gradient', shape: 'linear', c1: 'brandDeep', c2: 'brand', angle: 155 });
+  assert.deepEqual(m({ coverStyle: 'pattern' }).motif, { type: 'lines' });
+  assert.equal(m({ coverStyle: 'pattern', cover: { pattern: 'grid' } }).bg.shape, 'radial');
+  assert.deepEqual(m({ coverStyle: 'pattern', cover: { pattern: 'grid' } }).motif, { type: 'grid' });
+  assert.equal(m({ coverStyle: 'pattern', cover: { fill: 'solid' } }).bg.type, 'solid');
+  const minimal = m({ coverStyle: 'minimal' });
+  assert.deepEqual([minimal.bg.type, minimal.bg.c1, minimal.motif.type, minimal.text.color], ['solid', 'white', 'band', 'auto']);
+  for (const [old, type] of [['fullbleed', 'photo'], ['editorial', 'photo'], ['gradient', 'gradient'], ['solid', 'solid'], ['blueprint', 'solid']]) {
+    assert.equal(m({ coverStyle: old }).bg.type, type, old);
+  }
+});
+
+test('cover model: new layers are kept and checked', () => {
+  const c = Report.coverModel({ coverStyle: 'map', cover: { bg: { type: 'solid', c1: '#FFFFFF' }, shade: { color: '#000000', opacity: 250, mode: 'x' },
+    motif: { type: 'band' }, logo: { size: 99, pos: 'zz', plate: 'on' }, text: { color: 'dark', align: 'center' } } });
+  assert.deepEqual(c.bg, { type: 'solid', shape: 'linear', c1: '#ffffff', c2: 'brand', angle: 155 });
+  assert.deepEqual(c.shade, { color: '#000000', opacity: 100, mode: 'frame' });
+  assert.deepEqual(c.motif, { type: 'band' });
+  assert.deepEqual(c.logo, { size: 30, pos: 'tl', plate: 'on' });
+  assert.deepEqual(c.text, { color: 'dark', align: 'center' });
+  const d = Report.coverModel({ cover: { bg: { type: 'gradient', shape: 'radial', c1: 'red', c2: '#12', angle: 400 }, logo: { size: 2 } } });
+  assert.deepEqual(d.bg, { type: 'gradient', shape: 'radial', c1: 'brandDeep', c2: 'brand', angle: 360 });
+  assert.equal(d.logo.size, 6);
+  assert.deepEqual(Report.designOf({ design: { coverStyle: 'minimal' } }).layers, Report.coverModel({ coverStyle: 'minimal' }), 'designOf carries the layers');
+});
+
+test('cover colours: tokens follow the brand, the text colour keeps the contrast, white stays white', () => {
+  const P = Report.palette({ primary: '#0E5A4E', accent: '#1A8A47' });
+  const D = { ink: '#1A2229' };
+  const L = (over) => Report.coverModel({ cover: over });
+  assert.equal(Report.colorOf('brandDeep', P, D), P.deep);
+  assert.equal(Report.colorOf('white', P, D), '#ffffff');
+  assert.equal(Report.colorOf('#ABCDEF', P, D), '#abcdef');
+  assert.equal(Math.round(Report.contrast('#ffffff', '#000000')), 21);
+  const white = Report.coverInk(L({ bg: { type: 'solid', c1: '#ffffff' } }), P, D);
+  assert.deepEqual([white.bg, white.ink, white.dark], ['#ffffff', '#1A2229', true]);
+  assert.ok(white.ratio >= 4.5);
+  const deep = Report.coverInk(L({ bg: { type: 'solid', c1: 'brandDeep' } }), P, D);
+  assert.deepEqual([deep.ink, deep.dark], ['#ffffff', false]);
+  const lightGradient = Report.coverInk(L({ bg: { type: 'gradient', c1: '#ffffff', c2: '#f2efe8' } }), P, D);
+  assert.equal(lightGradient.dark, true);
+  const forced = Report.coverInk(L({ bg: { type: 'solid', c1: '#ffffff' }, text: { color: 'light' } }), P, D);
+  assert.deepEqual([forced.ink, forced.ratio], ['#ffffff', 1]);
+  const map = Report.coverInk(L({ bg: { type: 'map' }, shade: { color: 'brandDeep', opacity: 100 } }), P, D);
+  assert.equal(map.dark, false, 'a full brand shade over the map keeps light text');
+  const clear = Report.coverInk(L({ bg: { type: 'map' }, shade: { color: '#ffffff', opacity: 90 } }), P, D);
+  assert.equal(clear.dark, true, 'a white shade over the map gives dark text');
+});
