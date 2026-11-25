@@ -41,15 +41,15 @@
 .brand-logo img { height: 100%; width: auto; max-width: 62mm; object-fit: contain; display: block; }
 .brand-logo--pill { background: #fff; border-radius: calc(2mm * var(--rf, 1)); padding: 1.4mm 2.6mm; box-sizing: border-box; }
 .wordmark { font-family: var(--serif); font-weight: 700; letter-spacing: .01em; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; }
-.pg-head .brand-logo { height: 7mm; }
-.pg-head .wordmark { font-size: calc(13pt * var(--ts, 1) * var(--fit, 1)); color: var(--brand); }
+.pg-head .brand-logo { height: var(--hl, 7mm); }
+.pg-head .wordmark { font-size: calc(13pt * var(--hl-k, 1) * var(--ts, 1) * var(--fit, 1)); color: var(--brand); }
 .cover-top .brand-logo, .cover-logo-b .brand-logo { height: var(--cv-logo-h, 14mm); }
 .cover-top .brand-logo img, .cover-logo-b .brand-logo img { max-width: min(100mm, calc(var(--cv-logo-h, 14mm) * 5)); }
 .cover-top .wordmark, .cover-logo-b .wordmark { font-size: calc(26pt * var(--cv-logo-k, 1) * var(--ts, 1) * var(--fit, 1)); color: #fff; }
-.brand-band .brand-logo { height: 9mm; flex: 0 0 auto; }
-.brand-band .wordmark { font-size: calc(15pt * var(--ts, 1) * var(--fit, 1)); color: #fff; }
-.stamp .brand-logo { height: 8mm; opacity: .55; }
-.stamp .wordmark { font-size: calc(12pt * var(--ts, 1) * var(--fit, 1)); color: var(--brand-200); }
+.brand-band .brand-logo { height: calc(9mm * var(--hl-k, 1)); flex: 0 0 auto; }
+.brand-band .wordmark { font-size: calc(15pt * var(--hl-k, 1) * var(--ts, 1) * var(--fit, 1)); color: #fff; }
+.stamp .brand-logo { height: calc(8mm * var(--hl-k, 1)); opacity: .55; }
+.stamp .wordmark { font-size: calc(12pt * var(--hl-k, 1) * var(--ts, 1) * var(--fit, 1)); color: var(--brand-200); }
 .poi-n { display: inline-flex; align-items: center; justify-content: center; width: 4.2mm; height: 4.2mm; border-radius: calc(1mm * var(--rf, 1)); background: var(--brand-deep); color: #fff; font-size: calc(6.2pt * var(--ts, 1) * var(--fit, 1)); font-weight: 700; margin-right: 2mm; vertical-align: .2mm; }
 
 /* ---- running header / footer ---- */

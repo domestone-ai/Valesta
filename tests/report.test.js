@@ -1280,3 +1280,14 @@ test('cover rendering: a gradient made with layers covers the whole page; a 1.0.
   st.design.cover = { bg: { type: 'gradient', c1: '#1b2a49', c2: '#b08d57' } };
   assert.ok(!coverOf(st).cls.includes('cv-legacy'));
 });
+
+test('page logo: small, medium or large in the page headers; medium by default', () => {
+  const css = (v) => Report.brandCss({ brand: {}, design: v === undefined ? {} : { headerLogo: v } });
+  assert.match(css(), /--hl:7mm;--hl-k:1[;}]/);
+  assert.match(css('S'), /--hl:5mm;--hl-k:0\.714/);
+  assert.match(css('L'), /--hl:9mm;--hl-k:1\.286/);
+  assert.match(css('XL'), /--hl:7mm/);
+  assert.equal(Report.designOf({ design: { headerLogo: 'zz' } }).headerLogo, 'M');
+  const sheet = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'css', 'report.css'), 'utf8');
+  assert.match(sheet, /\.pg-head \.brand-logo \{ height: var\(--hl, 7mm\); \}/);
+});

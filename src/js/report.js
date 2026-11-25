@@ -101,6 +101,8 @@
     'homog', 'homogChart', 'result', 'sensitivity', 'uncertainty', 'photos', 'hypotheses', 'sources', 'certification', 'annexes', 'glossary'];
   const DENSITY = { compact: { sp: 0.8, lh: 1.42 }, normal: { sp: 1, lh: 1.5 }, airy: { sp: 1.2, lh: 1.6 } };
   const RADIUS = { square: 0, rounded: 1, soft: 1.8 };
+  // Height of the logo in the page headers (mm); the brand band and the stamp follow in proportion.
+  const HEADER_LOGO = { S: 5, M: 7, L: 9 };
   // Cover gallery. Photo covers use the custom cover image, then the photo marked as cover, then the map.
   // Four covers. Older styles are shown with the closest one: photo for full-page and editorial, pattern for gradient,
   // solid colour and architectural (grid).
@@ -109,7 +111,7 @@
   const SAFE_IMG = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/;
   const WATERMARKS = ['', 'draft', 'confidential', 'custom'];
   const DEFAULT_DESIGN = { preset: 'full', fontHead: 'Cormorant Garamond', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded',
-    ink: '#1A2229', coverStyle: 'map', coverImage: null, autoFit: true, watermark: '', watermarkText: '', footerNote: '', pageNumbers: true,
+    ink: '#1A2229', coverStyle: 'map', coverImage: null, headerLogo: 'M', autoFit: true, watermark: '', watermarkText: '', footerNote: '', pageNumbers: true,
     sections: SECTION_KEYS.reduce((o, k) => { o[k] = true; return o; }, {}) };
   // Report models: which blocks each audience gets (missing keys = shown). A model sets the sections when the user
   // picks it; the name only marks the button. "complete" and "technical" (1.0.0) open as "full".
@@ -130,6 +132,7 @@
     out.textScale = isFinite(ts) && ts > 0 ? Math.max(0.85, Math.min(1.15, ts)) : 1;
     if (!DENSITY[out.density]) out.density = 'normal';
     if (!(out.radius in RADIUS)) out.radius = 'rounded';
+    if (!HEADER_LOGO[out.headerLogo]) out.headerLogo = 'M';
     const legacy = out.coverStyle;
     out.cover = Object.assign({ pattern: legacy === 'blueprint' ? 'grid' : 'lines', fill: legacy === 'solid' || legacy === 'blueprint' ? 'solid' : 'gradient' }, d.cover || {});
     if (LEGACY_COVERS[legacy]) out.coverStyle = LEGACY_COVERS[legacy];
@@ -233,7 +236,8 @@
     const D = designOf(state);
     const dn = DENSITY[D.density];
     return `.report{--brand:${P.brand};--brand-deep:${P.deep};--brand-mid:${P.mid};--brand-50:${P.b50};--brand-100:${P.b100};--brand-200:${P.b200};--brand-300:${P.b300};--accent:${P.accent};--accent-50:${P.a50};--accent-200:${P.a200};` +
-      `--serif:${FONT_STACKS[D.fontHead]};--sans:${FONT_STACKS[D.fontBody]};--ts:${D.textScale};--sp:${dn.sp};--lh:${dn.lh};--rf:${RADIUS[D.radius]};--ink:${D.ink}}`;
+      `--serif:${FONT_STACKS[D.fontHead]};--sans:${FONT_STACKS[D.fontBody]};--ts:${D.textScale};--sp:${dn.sp};--lh:${dn.lh};--rf:${RADIUS[D.radius]};--ink:${D.ink};` +
+      `--hl:${HEADER_LOGO[D.headerLogo]}mm;--hl-k:${Math.round((HEADER_LOGO[D.headerLogo] / 7) * 1000) / 1000}}`;
   }
   const isRaster = (d) => typeof d === 'string' && /^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d);
   function logoHtml(ctx, onDark, slot, plate) {
