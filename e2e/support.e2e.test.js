@@ -323,7 +323,8 @@ test('the feedback form checks its fields, shows and lets remove the technical d
   await page.selectOption('#fb-type', 'bug');
   assert.equal(await page.isChecked('#dlg [data-fb="tech"]'), true, 'technical details offered for a technical problem');
   const tech = await page.textContent('#fb-tech');
-  for (const s of ['Versione', 'Valesta 1.0', 'Piattaforma', 'Web · Chrome', 'Lingua dell’app', 'Sezione', 'deliver']) assert.ok(tech.includes(s), s);
+  const version = fs.readFileSync(path.join(__dirname, '..', 'build.py'), 'utf8').match(/^VERSION = "([^"]+)"$/m)[1];
+  for (const s of ['Versione', `Valesta ${version}`, 'Piattaforma', 'Web · Chrome', 'Lingua dell’app', 'Sezione', 'deliver']) assert.ok(tech.includes(s), s);
   await page.fill('#fb-doing', 'Esportare il report');
   await page.fill('#fb-what', 'Il PDF esce senza la mappa.');
   assert.equal(await page.getAttribute('#fb-what', 'aria-invalid'), 'false');
@@ -344,7 +345,7 @@ test('the feedback form checks its fields, shows and lets remove the technical d
   assert.ok(issue, outside.join());
   const q = new URL(issue).searchParams;
   assert.equal(q.get('title'), 'Problema tecnico: Il PDF esce senza la mappa.');
-  assert.ok(q.get('body').includes('Esportare il report') && q.get('body').includes('Valesta 1.0'));
+  assert.ok(q.get('body').includes('Esportare il report') && q.get('body').includes(`Valesta ${version}`));
   assert.ok(!/@/.test(q.get('title') + q.get('body')), 'no e-mail address');
   const st = await page.textContent('#fb-status');
   assert.match(st, /la segnalazione arriva solo quando la pubblichi lì/);
