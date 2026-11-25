@@ -1,6 +1,7 @@
 name: Web app on GitHub Pages
 # Each published release builds the web app (dist/Web), runs the unit tests and publishes it on GitHub Pages, so that
 # Mac, iPhone, iPad and any computer with a browser can use Valesta. "Run workflow" publishes it again by hand.
+# Two jobs: the deploy job starts when the artifact of the build job is complete and listed.
 on:
   release:
     types: [published]
@@ -13,12 +14,9 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  deploy:
-    name: Build and publish the web app
+  build:
+    name: Build the web app
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -32,5 +30,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist/Web
+  deploy:
+    name: Publish the web app
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
