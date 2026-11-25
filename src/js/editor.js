@@ -63,7 +63,7 @@
   const LIVE = { on: false, version: 0, timer: null, pushTimer: null, pushing: false, failures: 0 };
   const CURRENT_KEY = 'valesta-current';
   const EXAMPLE_ID = 'vexampledemo01';
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   const PROFILE_KEY = 'valesta-profiles';
   const DEFAULT_PROFILE_KEY = 'valesta-default-profile';
   let myProfiles = [];
