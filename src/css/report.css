@@ -43,8 +43,9 @@
 .wordmark { font-family: var(--serif); font-weight: 700; letter-spacing: .01em; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; }
 .pg-head .brand-logo { height: 7mm; }
 .pg-head .wordmark { font-size: calc(13pt * var(--ts, 1) * var(--fit, 1)); color: var(--brand); }
-.cover-top .brand-logo { height: 14mm; }
-.cover-top .wordmark { font-size: calc(26pt * var(--ts, 1) * var(--fit, 1)); color: #fff; }
+.cover-top .brand-logo, .cover-logo-b .brand-logo { height: var(--cv-logo-h, 14mm); }
+.cover-top .brand-logo img, .cover-logo-b .brand-logo img { max-width: min(100mm, calc(var(--cv-logo-h, 14mm) * 5)); }
+.cover-top .wordmark, .cover-logo-b .wordmark { font-size: calc(26pt * var(--cv-logo-k, 1) * var(--ts, 1) * var(--fit, 1)); color: #fff; }
 .brand-band .brand-logo { height: 9mm; flex: 0 0 auto; }
 .brand-band .wordmark { font-size: calc(15pt * var(--ts, 1) * var(--fit, 1)); color: #fff; }
 .stamp .brand-logo { height: 8mm; opacity: .55; }
@@ -132,10 +133,10 @@ ul.bullets--2col li { break-inside: avoid; }
 .chart { width: 100%; height: auto; display: block; overflow: visible; }
 
 /* ===== COVER ===== */
-.page--cover { background: var(--brand-deep); color: #fff; }
-.cover-visual { position: absolute; left: 0; right: 0; top: 0; height: 178mm; overflow: hidden; background: var(--brand-deep); }
+.page--cover { background: var(--cv-base, var(--brand-deep)); color: #fff; }
+.cover-visual { position: absolute; left: 0; right: 0; top: 0; height: 178mm; overflow: hidden; background: var(--cv-base, var(--brand-deep)); }
 .cover-visual svg, .cover-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cover-shade { position: absolute; left: 0; right: 0; top: 0; height: 179mm; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 78%, transparent) 0%, color-mix(in srgb, var(--brand-deep) 10%, transparent) 24%, color-mix(in srgb, var(--brand-deep) 5%, transparent) 52%, color-mix(in srgb, var(--brand-deep) 72%, transparent) 80%, var(--brand-deep) 100%); }
+.cover-shade { position: absolute; left: 0; right: 0; top: 0; height: 179mm; opacity: var(--cv-so, 1); background: linear-gradient(180deg, color-mix(in srgb, var(--cv-shade, var(--brand-deep)) 78%, transparent) 0%, color-mix(in srgb, var(--cv-shade, var(--brand-deep)) 10%, transparent) 24%, color-mix(in srgb, var(--cv-shade, var(--brand-deep)) 5%, transparent) 52%, color-mix(in srgb, var(--cv-shade, var(--brand-deep)) 72%, transparent) 80%, var(--cv-shade, var(--brand-deep)) 100%); }
 .cover-top { position: absolute; top: 13mm; left: 16mm; right: 16mm; display: flex; justify-content: space-between; align-items: flex-start; }
 .cover-top .tc-logo { height: 13.5mm; color: #fff; }
 .cover-ref { text-align: right; font-size: calc(6.8pt * var(--ts, 1) * var(--fit, 1)); letter-spacing: .16em; text-transform: uppercase; display: flex; flex-direction: column; gap: 1.2mm; color: rgba(255,255,255,.8); }
@@ -398,42 +399,11 @@ ol.hyp li::marker { color: var(--brand); font-weight: 700; }
 /* ===== Valesta design options: text size (--ts), auto-fit (--fit), density (--sp/--lh), corners (--rf) ===== */
 .page--cover, .pg-head, .pg-foot { --ts: 1; }
 .pg-body { font-size: calc(8.8pt * var(--ts, 1) * var(--fit, 1)); }
-.page--cover.cover--gradient .cover-visual { background: linear-gradient(155deg, var(--brand-deep) 0%, var(--brand-mid) 48%, var(--brand) 100%); }
-.page--cover.cover--solid .cover-visual { background: var(--brand-deep); }
 .cover-lines { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 20; overflow: hidden; }
 .watermark span { transform: rotate(-32deg); font-family: var(--sans); font-weight: 800; font-size: 70pt; letter-spacing: .14em; color: rgba(185, 40, 40, .085); border: 1.4mm solid rgba(185, 40, 40, .075); border-radius: calc(5mm * var(--rf, 1)); padding: 3mm 12mm; white-space: nowrap; text-transform: uppercase; }
 .page--cover .watermark span { color: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .12); }
 
-/* ===== Valesta cover gallery: full-bleed photo, editorial, minimal, architectural ===== */
-.page--cover.cover--blueprint .cover-visual { background: radial-gradient(120% 95% at 72% 30%, var(--brand) 0%, var(--brand-deep) 64%); }
-.page--cover.cover--fullbleed .cover-visual { height: 100%; }
-.cover--fullbleed .cover-visual img { object-position: center 32%; }
-.cover--fullbleed .cover-visual svg.map { height: 70%; }
-.page--cover.cover--fullbleed .cover-shade { height: 100%; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 72%, transparent) 0%, color-mix(in srgb, var(--brand-deep) 6%, transparent) 20%, color-mix(in srgb, var(--brand-deep) 4%, transparent) 40%, color-mix(in srgb, var(--brand-deep) 76%, transparent) 62%, var(--brand-deep) 84%); }
-.page--cover.cover--editorial { background: #FBFAF7; color: var(--ink); }
-.page--cover.cover--minimal { background: #fff; color: var(--ink); }
-.cover--editorial .cover-visual { top: 36mm; left: 16mm; right: 16mm; height: 110mm; border-radius: calc(3mm * var(--rf, 1)); }
-.cover--editorial .cover-shade, .cover--minimal .cover-shade { display: none; }
-.cover--minimal .cover-visual { top: 0; bottom: 0; left: 0; right: auto; width: 9mm; height: auto; background: var(--brand); }
-.cover--minimal .cover-top, .cover--minimal .cover-panel, .cover--minimal .cover-foot { left: 27mm; }
-.cover--minimal .cover-main { left: 27mm; top: 112mm; }
-.cover--minimal .cover-title { font-size: calc(48pt * var(--ts, 1) * var(--fit, 1)); }
-.cover--editorial .cover-main { top: 156mm; }
-.cover--editorial .cover-top .wordmark, .cover--minimal .cover-top .wordmark { color: var(--brand-deep); }
-.cover--editorial .cover-ref, .cover--minimal .cover-ref, .cover--editorial .cover-ref span, .cover--minimal .cover-ref span { color: var(--ink-3); }
-.cover--editorial .cover-ref strong, .cover--minimal .cover-ref strong { color: var(--brand-deep); }
-.cover--editorial .cover-kicker, .cover--minimal .cover-kicker { color: var(--accent); }
-.cover--editorial .cover-kicker::before, .cover--minimal .cover-kicker::before { background: var(--accent); }
-.cover--editorial .cover-title, .cover--minimal .cover-title { color: var(--brand-deep); }
-.cover--editorial .cover-title em, .cover--minimal .cover-title em { color: var(--accent); }
-.cover--editorial .cover-address strong, .cover--minimal .cover-address strong { color: var(--ink); }
-.cover--editorial .cover-address span, .cover--minimal .cover-address span, .cover--editorial .cover-standards, .cover--minimal .cover-standards,
-.cover--editorial .cover-foot, .cover--minimal .cover-foot { color: var(--ink-3); }
-.cover--editorial .cover-standards, .cover--minimal .cover-standards { border-top-color: var(--line); }
-.cover--editorial .cover-panel { background: #fff; box-shadow: none; border: .3mm solid var(--line); }
-.cover--minimal .cover-panel { background: var(--brand-50); box-shadow: none; }
-.cover--editorial .watermark span, .cover--minimal .watermark span { color: rgba(185, 40, 40, .085); border-color: rgba(185, 40, 40, .075); }
 .toc-letter--toc, .toc-letter--letter { grid-template-columns: 1fr; }
 .toc-letter--toc .toc { max-width: 125mm; }
 .toc-letter--letter .letter { max-width: 150mm; }
@@ -461,14 +431,46 @@ ol.hyp li::marker { color: var(--brand); font-weight: 700; }
 .ai-use { margin: 3mm 0 4mm; padding: 2.6mm 3.4mm; border: .3mm solid var(--line); border-radius: calc(1.6mm * var(--rf, 1)); }
 .ai-use .h3 { margin-top: 0; }
 .ai-use p { margin: 0; }
-/* ===== four covers: photo (full page) and pattern (lines or grid, gradient or solid) ===== */
-.page--cover.cover--photo .cover-visual { height: 100%; }
-.cover--photo .cover-visual img { object-position: center 32%; }
-.cover--photo .cover-visual svg.map { height: 70%; }
-.page--cover.cover--photo .cover-shade { height: 100%; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-deep) 72%, transparent) 0%, color-mix(in srgb, var(--brand-deep) 6%, transparent) 20%, color-mix(in srgb, var(--brand-deep) 4%, transparent) 40%, color-mix(in srgb, var(--brand-deep) 76%, transparent) 62%, var(--brand-deep) 84%); }
-.page--cover.cover--pattern.fill-gradient .cover-visual { background: linear-gradient(155deg, var(--brand-deep) 0%, var(--brand-mid) 48%, var(--brand) 100%); }
-.page--cover.cover--pattern.fill-solid .cover-visual { background: var(--brand-deep); }
-.page--cover.cover--pattern.pat-grid.fill-gradient .cover-visual { background: radial-gradient(120% 95% at 72% 30%, var(--brand) 0%, var(--brand-deep) 64%); }
+/* ===== cover layers (report.js coverLook): background, shade, motif, band, logo, text ===== */
+.cv-bg-solid .cover-visual { background: var(--cv-c1); }
+.cv-bg-gradient .cover-visual { background: linear-gradient(var(--cv-ang, 155deg), var(--cv-c1) 0%, var(--cv-mid) 48%, var(--cv-c2) 100%); }
+.cv-bg-gradient.cv-shape-radial .cover-visual { background: radial-gradient(120% 95% at 72% 30%, var(--cv-c2) 0%, var(--cv-c1) 64%); }
+.cv-bg-gradient:not(.cv-legacy) .cover-visual { height: 100%; }
+.cv-bg-photo .cover-visual, .cv-bg-photo .cover-shade { height: 100%; }
+.cv-bg-photo .cover-visual img { object-position: center 32%; }
+.cv-bg-photo .cover-visual svg.map { height: 70%; }
+.cv-bg-photo.cv-shade-frame .cover-shade { background: linear-gradient(180deg, color-mix(in srgb, var(--cv-shade) 72%, transparent) 0%, color-mix(in srgb, var(--cv-shade) 6%, transparent) 20%, color-mix(in srgb, var(--cv-shade) 4%, transparent) 40%, color-mix(in srgb, var(--cv-shade) 76%, transparent) 62%, var(--cv-shade) 84%); }
+.cv-shade-full .cover-shade { background: var(--cv-shade); }
+.cv-shade-bottom .cover-shade { background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--cv-shade) 70%, transparent) 62%, var(--cv-shade) 100%); }
+.cv-shade-top .cover-shade { background: linear-gradient(0deg, transparent 0%, color-mix(in srgb, var(--cv-shade) 70%, transparent) 62%, var(--cv-shade) 100%); }
+.cover-band { position: absolute; top: 0; bottom: 0; left: 0; width: 9mm; background: var(--cv-band, var(--brand)); }
+.cv-motif-band .cover-top, .cv-motif-band .cover-panel, .cv-motif-band .cover-foot, .cv-motif-band .cover-logo-b { left: 27mm; }
+.cv-motif-band .cover-main { left: 27mm; top: 112mm; }
+.cv-motif-band .cover-title { font-size: calc(48pt * var(--ts, 1) * var(--fit, 1)); }
+.cv-logo-tr .cover-top { flex-direction: row-reverse; }
+.cv-logo-tr .cover-ref { text-align: left; }
+.cv-logo-tc .cover-top { flex-direction: column; align-items: center; gap: 5mm; }
+.cv-logo-tc .cover-ref { text-align: center; align-items: center; }
+.cv-logo-bl .cover-top { justify-content: flex-end; }
+.cv-logo-bl .cover-main { top: 132mm; }
+.cover-logo-b { position: absolute; left: 16mm; bottom: 52mm; }
+.cv-nopanel .cover-logo-b { bottom: 19mm; }
+.cv-al-center .cover-main, .cv-al-center .cover-standards { text-align: center; }
+.cv-al-center .cover-kicker { justify-content: center; }
+/* Dark text on a light cover (the minimal cover of 1.0.0). */
+.page--cover.cv-txt-dark { color: var(--ink); }
+.cv-txt-dark .cover-top .wordmark, .cv-txt-dark .cover-logo-b .wordmark { color: var(--brand-deep); }
+.cv-txt-dark .cover-ref, .cv-txt-dark .cover-ref span { color: var(--ink-3); }
+.cv-txt-dark .cover-ref strong { color: var(--brand-deep); }
+.cv-txt-dark .cover-kicker { color: var(--accent); }
+.cv-txt-dark .cover-kicker::before { background: var(--accent); }
+.cv-txt-dark .cover-title { color: var(--brand-deep); }
+.cv-txt-dark .cover-title em { color: var(--accent); }
+.cv-txt-dark .cover-address strong { color: var(--ink); }
+.cv-txt-dark .cover-address span, .cv-txt-dark .cover-standards, .cv-txt-dark .cover-foot { color: var(--ink-3); }
+.cv-txt-dark .cover-standards { border-top-color: var(--line); }
+.cv-txt-dark .cover-panel { background: var(--brand-50); box-shadow: none; }
+.cv-txt-dark .watermark span { color: rgba(185, 40, 40, .085); border-color: rgba(185, 40, 40, .075); }
 
 /* ===== technical page and annexes ===== */
 .tech .h2 { margin: 0 0 1.5mm; font-family: var(--serif); font-size: calc(15pt * var(--ts, 1) * var(--fit, 1)); color: var(--brand-deep); }

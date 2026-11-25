@@ -414,12 +414,12 @@ test('cover styles: the pattern cover (formerly gradient and solid) replaces the
   const st = fresh();
   st.design = { coverStyle: 'gradient' };
   const cover = pageOf(Report.render(st, MCA.compute(st)), 'cover');
-  assert.match(cover, /cover--pattern pat-lines fill-gradient/);
+  assert.match(cover, /cv-bg-gradient cv-shape-linear cv-shade-frame cv-motif-lines/);
   assert.doesNotMatch(cover, /class="map/);
   st.design = { coverStyle: 'solid' };
-  assert.match(pageOf(Report.render(st, MCA.compute(st)), 'cover'), /cover--pattern pat-lines fill-solid/);
+  assert.match(pageOf(Report.render(st, MCA.compute(st)), 'cover'), /cv-bg-solid cv-shape-linear cv-shade-frame cv-motif-lines/);
   st.design = { coverStyle: 'pattern', cover: { pattern: 'grid', fill: 'gradient' } };
-  assert.match(pageOf(Report.render(st, MCA.compute(st)), 'cover'), /cover--pattern pat-grid fill-gradient/);
+  assert.match(pageOf(Report.render(st, MCA.compute(st)), 'cover'), /cv-bg-gradient cv-shape-radial cv-shade-frame cv-motif-grid/);
 });
 
 test('documentHtml adds the auto-fit script only when asked', () => {
@@ -433,7 +433,8 @@ test('cover gallery: every cover style renders its own cover page', () => {
     const st = fresh();
     st.design = { coverStyle: style };
     const cover = pageOf(Report.render(st, MCA.compute(st)), 'cover');
-    assert.ok(cover.includes(`page--cover cover--${style}`), style);
+    const bg = { map: 'cv-bg-map', photo: 'cv-bg-photo', pattern: 'cv-bg-gradient', minimal: 'cv-bg-solid' }[style];
+    assert.ok(cover.includes(`page--cover ${bg}`), style);
     assert.doesNotMatch(cover.replace(/data:[^"]+/g, ''), /undefined|NaN/, style);
   }
 });
@@ -628,9 +629,9 @@ test('covers: four styles, older styles shown with the closest one', () => {
   assert.deepEqual(Report.COVER_STYLES, ['map', 'photo', 'pattern', 'minimal']);
   const st = fresh();
   st.design.coverStyle = 'blueprint';
-  assert.ok(Report.render(st, MCA.compute(st)).includes('cover--pattern'), 'blueprint → pattern');
+  assert.ok(Report.render(st, MCA.compute(st)).includes('cv-bg-solid cv-shape-linear cv-shade-frame cv-motif-grid'), 'blueprint → pattern (grid, solid)');
   st.design.coverStyle = 'editorial';
-  assert.ok(Report.render(st, MCA.compute(st)).includes('cover--photo'), 'editorial → photo');
+  assert.ok(Report.render(st, MCA.compute(st)).includes('page--cover cv-bg-photo'), 'editorial → photo');
 });
 
 test('cover editor: own texts per language and optional blocks', () => {
@@ -695,7 +696,7 @@ test('report language packs: each renders in its own language, without English l
 
 test('report stylesheet keeps the page layout and the style of every section', () => {
   const css = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'css', 'report.css'), 'utf8');
-  for (const rule of ['@page', '.page--cover', '.cover--photo', '.cover--pattern', '.cover--minimal', '.checks-rep', '.ai-use', '.tech .h2', '.annex-t', '.annex-img', '.ap-grid'])
+  for (const rule of ['@page', '.page--cover', '.cv-bg-photo', '.cv-bg-gradient', '.cv-motif-band', '.cv-txt-dark', '.cv-shade-frame', '.checks-rep', '.ai-use', '.tech .h2', '.annex-t', '.annex-img', '.ap-grid'])
     assert.ok(css.includes(rule), `report.css lost ${rule}`);
   assert.ok(css.split('\n').length > 400, 'report.css looks truncated');
 });
@@ -1176,7 +1177,10 @@ test('cover model: 1.0.0 covers become layers with the same look', () => {
   assert.deepEqual(m({ coverStyle: 'pattern', cover: { pattern: 'grid' } }).motif, { type: 'grid' });
   assert.equal(m({ coverStyle: 'pattern', cover: { fill: 'solid' } }).bg.type, 'solid');
   const minimal = m({ coverStyle: 'minimal' });
-  assert.deepEqual([minimal.bg.type, minimal.bg.c1, minimal.motif.type, minimal.text.color], ['solid', 'white', 'band', 'auto']);
+  assert.deepEqual([minimal.bg.type, minimal.bg.c1, minimal.motif.type, minimal.text.color, minimal.shade.opacity], ['solid', 'white', 'band', 'auto', 0]);
+  assert.equal(m({ coverStyle: 'pattern' }).shade.opacity, 100, 'the 1.0.0 shade over a pattern cover stays');
+  assert.equal(m({ cover: { bg: { type: 'solid', c1: '#ffffff' } } }).shade.opacity, 0, 'a new solid cover has no shade');
+  assert.equal(m({ cover: { bg: { type: 'photo' } } }).shade.opacity, 100, 'a new photo cover has a shade');
   for (const [old, type] of [['fullbleed', 'photo'], ['editorial', 'photo'], ['gradient', 'gradient'], ['solid', 'solid'], ['blueprint', 'solid']]) {
     assert.equal(m({ coverStyle: old }).bg.type, type, old);
   }
@@ -1217,4 +1221,62 @@ test('cover colours: tokens follow the brand, the text colour keeps the contrast
   assert.equal(map.dark, false, 'a full brand shade over the map keeps light text');
   const clear = Report.coverInk(L({ bg: { type: 'map' }, shade: { color: '#ffffff', opacity: 90 } }), P, D);
   assert.equal(clear.dark, true, 'a white shade over the map gives dark text');
+});
+
+const coverOf = (st) => {
+  const html = Report.render(st, MCA.compute(st));
+  const m = /<section class="page page--cover([^"]*)"[^>]*style="([^"]*)"[^>]*>([\s\S]*?)<\/section>/.exec(html);
+  assert.ok(m, 'cover section with layer variables');
+  return { cls: m[1].trim().split(/\s+/), style: m[2], body: m[3] };
+};
+
+test('cover rendering: a white background stays white, with dark text, the logo size and position', () => {
+  const st = fresh();
+  st.design.cover = { bg: { type: 'solid', c1: '#ffffff' }, logo: { size: 20, pos: 'tr' } };
+  const c = coverOf(st);
+  for (const k of ['cv-bg-solid', 'cv-txt-dark', 'cv-logo-tr', 'cv-motif-none', 'cv-al-left']) assert.ok(c.cls.includes(k), k);
+  for (const v of ['--cv-c1:#ffffff', '--cv-base:#ffffff', '--cv-so:0;', '--cv-logo-h:20mm']) assert.ok(c.style.includes(v), v);
+  assert.ok(!c.body.includes('brand-logo--pill'), 'no plate on a light cover');
+});
+
+test('cover rendering: a 1.0.0 map cover keeps its colours and shade', () => {
+  const st = fresh();
+  st.design.coverStyle = 'map';
+  delete st.design.cover;
+  const P = Report.palette(st.brand);
+  const c = coverOf(st);
+  for (const k of ['cv-bg-map', 'cv-txt-light', 'cv-shade-frame', 'cv-logo-tl']) assert.ok(c.cls.includes(k), k);
+  for (const v of [`--cv-shade:${P.deep}`, `--cv-base:${P.deep}`, '--cv-so:1;', '--cv-logo-h:14mm']) assert.ok(c.style.includes(v), v);
+  assert.ok(c.body.includes('class="cover-shade"'));
+});
+
+test('cover rendering: band, centred text, logo at the bottom; motifs follow the text colour', () => {
+  const st = fresh();
+  st.design.cover = { bg: { type: 'solid', c1: '#ffffff' }, motif: { type: 'band' }, text: { align: 'center' }, logo: { pos: 'bl' } };
+  let c = coverOf(st);
+  for (const k of ['cv-motif-band', 'cv-al-center', 'cv-logo-bl']) assert.ok(c.cls.includes(k), k);
+  assert.ok(c.body.includes('class="cover-band"'));
+  assert.ok(c.body.includes('class="cover-logo-b"'), 'the logo moves to the bottom block');
+  st.design.cover = { bg: { type: 'gradient', c1: '#ffffff', c2: '#f4f1ea' }, motif: { type: 'lines' } };
+  c = coverOf(st);
+  assert.ok(c.cls.includes('cv-txt-dark'));
+  assert.ok(c.body.includes('stroke="#1a2229"') || c.body.includes('stroke="#1A2229"'), 'dark lines on a light gradient');
+  st.design.cover = { bg: { type: 'solid', c1: 'brandDeep' }, motif: { type: 'grid' }, logo: { plate: 'on' } };
+  st.brand.logoMode = 'custom';
+  st.brand.logoLight = 'data:image/png;base64,iVBORw0KGgo=';
+  st.brand.logoDark = null;
+  c = coverOf(st);
+  assert.ok(c.cls.includes('cv-txt-light') && c.body.includes('stroke="#fff"'));
+  assert.ok(c.body.includes('brand-logo--pill'), 'plate on request');
+});
+
+test('cover rendering: a gradient made with layers covers the whole page; a 1.0.0 pattern cover keeps its geometry', () => {
+  assert.equal(Report.coverModel({ coverStyle: 'pattern' }).legacy, true);
+  assert.equal(Report.coverModel({ cover: { bg: { type: 'gradient' } } }).legacy, false);
+  const st = fresh();
+  st.design.coverStyle = 'pattern';
+  delete st.design.cover;
+  assert.ok(coverOf(st).cls.includes('cv-legacy'));
+  st.design.cover = { bg: { type: 'gradient', c1: '#1b2a49', c2: '#b08d57' } };
+  assert.ok(!coverOf(st).cls.includes('cv-legacy'));
 });

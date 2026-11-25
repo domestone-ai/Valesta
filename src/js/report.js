@@ -106,7 +106,6 @@
   // solid colour and architectural (grid).
   const COVER_STYLES = ['map', 'photo', 'pattern', 'minimal'];
   const LEGACY_COVERS = { fullbleed: 'photo', editorial: 'photo', gradient: 'pattern', solid: 'pattern', blueprint: 'pattern' };
-  const LIGHT_COVERS = ['minimal'];
   const SAFE_IMG = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/;
   const WATERMARKS = ['', 'draft', 'confidential', 'custom'];
   const DEFAULT_DESIGN = { preset: 'full', fontHead: 'Cormorant Garamond', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded',
@@ -165,21 +164,27 @@
     const grid = (cv.pattern || (old === 'blueprint' ? 'grid' : 'lines')) === 'grid';
     const solid = (cv.fill || (old === 'solid' || old === 'blueprint' ? 'solid' : 'gradient')) === 'solid';
     const veil = cv.veil === '' || cv.veil == null || !isFinite(+cv.veil) ? 1 : Math.max(0, Math.min(1, +cv.veil));
+    const layer = (k) => (cv[k] && typeof cv[k] === 'object' && !Array.isArray(cv[k]) ? cv[k] : {});
+    const B = layer('bg'), S = layer('shade'), M = layer('motif'), L = layer('logo'), X = layer('text');
+    // The shade of 1.0.0 covered every cover but the minimal one. A cover made with layers has a shade over a map or a
+    // photo only, until the user sets one: a white background stays white.
+    const layered = Object.keys(B).length > 0;
+    const shadeDefault = layered ? (B.type === 'map' || B.type === 'photo' ? 100 : 0) : style === 'minimal' ? 0 : Math.round(veil * 100);
     const base = {
       type: style === 'photo' || style === 'map' ? style : style === 'minimal' || solid ? 'solid' : 'gradient',
       shape: style === 'pattern' && grid && !solid ? 'radial' : 'linear',
       c1: style === 'minimal' ? 'white' : 'brandDeep',
       motif: style === 'pattern' ? (grid ? 'grid' : 'lines') : style === 'minimal' ? 'band' : 'none',
     };
-    const layer = (k) => (cv[k] && typeof cv[k] === 'object' && !Array.isArray(cv[k]) ? cv[k] : {});
-    const B = layer('bg'), S = layer('shade'), M = layer('motif'), L = layer('logo'), X = layer('text');
     return {
       bg: { type: pick(B.type, COVER_BG, base.type), shape: pick(B.shape, COVER_SHAPES, base.shape), c1: colorTok(B.c1, base.c1),
         c2: colorTok(B.c2, 'brand'), angle: bounded(B.angle, 0, 360, 155) },
-      shade: { color: colorTok(S.color, 'brandDeep'), opacity: bounded(S.opacity, 0, 100, Math.round(veil * 100)), mode: pick(S.mode, SHADE_MODES, 'frame') },
+      shade: { color: colorTok(S.color, 'brandDeep'), opacity: bounded(S.opacity, 0, 100, shadeDefault), mode: pick(S.mode, SHADE_MODES, 'frame') },
       motif: { type: pick(M.type, MOTIFS, base.motif) },
       logo: { size: bounded(L.size, 6, 30, 14), pos: pick(L.pos, LOGO_POS, 'tl'), plate: pick(L.plate, LOGO_PLATES, 'auto') },
       text: { color: pick(X.color, TEXT_COLORS, 'auto'), align: pick(X.align, ['left', 'center'], 'left') },
+      // A 1.0.0 cover keeps the geometry of 1.0.0 (a gradient in the upper part, blended by the shade).
+      legacy: !layered,
     };
   }
   // Colour of a cover token or hex value, contrast ratio (WCAG 2.x) and the text colour of a cover.
@@ -194,10 +199,12 @@
   // (the image itself is not measured). A shade from the top covers the texts only a little.
   const MID_TONE = '#7f7f7f';
   function coverBackground(L, P, D) {
+    const k = (L.shade.opacity / 100) * (L.shade.mode === 'top' ? 0.25 : 1);
+    const shade = colorOf(L.shade.color, P, D);
+    if (L.bg.type === 'map' || L.bg.type === 'photo') return mix(MID_TONE, shade, k);
     const c1 = colorOf(L.bg.c1, P, D);
-    if (L.bg.type === 'solid') return c1;
-    if (L.bg.type === 'gradient') return mix(c1, colorOf(L.bg.c2, P, D), 0.5);
-    return mix(MID_TONE, colorOf(L.shade.color, P, D), (L.shade.opacity / 100) * (L.shade.mode === 'top' ? 0.25 : 1));
+    // The texts sit in the lower part of the page, where a gradient is near its first colour.
+    return mix(L.bg.type === 'gradient' ? mix(c1, colorOf(L.bg.c2, P, D), 0.25) : c1, shade, k);
   }
   // Light or dark text: the one with the higher contrast, unless the user forces it.
   function coverInk(L, P, D) {
@@ -229,15 +236,17 @@
       `--serif:${FONT_STACKS[D.fontHead]};--sans:${FONT_STACKS[D.fontBody]};--ts:${D.textScale};--sp:${dn.sp};--lh:${dn.lh};--rf:${RADIUS[D.radius]};--ink:${D.ink}}`;
   }
   const isRaster = (d) => typeof d === 'string' && /^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d);
-  function logoHtml(ctx, onDark, slot) {
+  function logoHtml(ctx, onDark, slot, plate) {
     // The neutral Valesta profile shows the Valesta logo when the app provides it (the brand files are not in the code).
     const VL = G.VALESTA_LOGO;
     const b = ctx.brand.logoMode !== 'custom' && ctx.brand.profileId === 'valesta' && VL && VL.light
       ? Object.assign({}, ctx.brand, { logoMode: 'custom', logoLight: VL.light, logoDark: VL.dark }) : ctx.brand;
     const name = esc(b.name || '');
     if (b.logoMode === 'custom' && (b.logoLight || b.logoDark)) {
+      if (plate === 'on' || (plate !== 'off' && onDark && !b.logoDark)) {
+        return `<span class="brand-logo brand-logo--${slot} brand-logo--pill"><img src="${esc(b.logoLight || b.logoDark)}" alt="${name}"></span>`;
+      }
       if (onDark && b.logoDark) return `<span class="brand-logo brand-logo--${slot}"><img src="${esc(b.logoDark)}" alt="${name}"></span>`;
-      if (onDark) return `<span class="brand-logo brand-logo--${slot} brand-logo--pill"><img src="${esc(b.logoLight)}" alt="${name}"></span>`;
       return `<span class="brand-logo brand-logo--${slot}"><img src="${esc(b.logoLight || b.logoDark)}" alt="${name}"></span>`;
     }
     return `<span class="wordmark wordmark--${slot}">${name}</span>`;
@@ -420,8 +429,8 @@
   const shortUrl = (u) => String(u || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 
   // ---------- pages ----------
-  // Decorative contour lines for the gradient / solid covers (deterministic).
-  function coverLines() {
+  // Decorative contour lines (deterministic), white on a dark cover and ink on a light one.
+  function coverLines(stroke = '#ffffff') {
     const w = 840;
     const h = 712;
     const cx = w * 0.8;
@@ -435,18 +444,18 @@
         const r = r0 * (1 + 0.06 * Math.sin(3 * t + i * 0.7) + 0.035 * Math.sin(5 * t - i * 0.4));
         d += (a ? 'L' : 'M') + (cx + r * Math.cos(t)).toFixed(1) + ',' + (cy + r * 0.8 * Math.sin(t)).toFixed(1);
       }
-      out += `<path d="${d}Z" fill="none" stroke="#ffffff" stroke-width="${i % 4 === 0 ? 1.3 : 0.6}" opacity="${(0.42 - i * 0.017).toFixed(3)}"/>`;
+      out += `<path d="${d}Z" fill="none" stroke="${stroke}" stroke-width="${i % 4 === 0 ? 1.3 : 0.6}" opacity="${(0.42 - i * 0.017).toFixed(3)}"/>`;
     }
     return `<svg class="cover-lines" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${out}</svg>`;
   }
   // Architectural cover: drawing grid and an axonometric building with floors and dimension ticks (deterministic).
-  function coverBlueprint() {
+  function coverBlueprint(stroke = '#fff') {
     const w = 840;
     const h = 712;
     const P = (x, y) => `${x.toFixed(1)},${y.toFixed(1)}`;
     let g = '';
-    for (let x = 0; x <= w; x += 21) g += `<path d="M${x} 0V${h}" stroke="#fff" stroke-width="${x % 105 ? 0.4 : 0.9}" opacity="${x % 105 ? 0.06 : 0.13}"/>`;
-    for (let y = 0; y <= h; y += 21) g += `<path d="M0 ${y}H${w}" stroke="#fff" stroke-width="${y % 105 ? 0.4 : 0.9}" opacity="${y % 105 ? 0.06 : 0.13}"/>`;
+    for (let x = 0; x <= w; x += 21) g += `<path d="M${x} 0V${h}" stroke="${stroke}" stroke-width="${x % 105 ? 0.4 : 0.9}" opacity="${x % 105 ? 0.06 : 0.13}"/>`;
+    for (let y = 0; y <= h; y += 21) g += `<path d="M0 ${y}H${w}" stroke="${stroke}" stroke-width="${y % 105 ? 0.4 : 0.9}" opacity="${y % 105 ? 0.06 : 0.13}"/>`;
     const c = [0.866, 0.5];
     const b0 = [600, 560];
     const L = 230;
@@ -457,8 +466,8 @@
     const br = [b0[0] + R * c[0], b0[1] - R * c[1]];
     const up = (p, d) => [p[0], p[1] - d];
     const tb = [bl[0] + R * c[0], bl[1] - R * c[1] - H];
-    const line = (a, b2, sw, op) => `<path d="M${P(a[0], a[1])}L${P(b2[0], b2[1])}" stroke="#fff" stroke-width="${sw}" opacity="${op}"/>`;
-    let b = `<path d="M${P(b0[0], b0[1])}L${P(bl[0], bl[1])}L${P(bl[0], bl[1] - H)}L${P(tb[0], tb[1])}L${P(br[0], br[1] - H)}L${P(br[0], br[1])}Z" fill="#fff" fill-opacity=".035" stroke="#fff" stroke-width="1.6" opacity=".6"/>`;
+    const line = (a, b2, sw, op) => `<path d="M${P(a[0], a[1])}L${P(b2[0], b2[1])}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`;
+    let b = `<path d="M${P(b0[0], b0[1])}L${P(bl[0], bl[1])}L${P(bl[0], bl[1] - H)}L${P(tb[0], tb[1])}L${P(br[0], br[1] - H)}L${P(br[0], br[1])}Z" fill="${stroke}" fill-opacity=".035" stroke="${stroke}" stroke-width="1.6" opacity=".6"/>`;
     b += line(b0, up(b0, H), 1.6, 0.6) + line(up(b0, H), up(bl, H), 1.2, 0.5) + line(up(b0, H), up(br, H), 1.2, 0.5);
     for (let f = 1; f < floors; f++) { const d = (H * f) / floors; b += line(up(b0, d), up(bl, d), 0.7, 0.28) + line(up(b0, d), up(br, d), 0.7, 0.28); }
     for (let j = 1; j < 6; j++) { const p = [b0[0] - (L * j / 6) * c[0], b0[1] - (L * j / 6) * c[1]]; b += line(p, up(p, H), 0.5, 0.2); }
@@ -467,8 +476,8 @@
     const dl = [[bl[0] - o * c[1], bl[1] + o * c[0]], [b0[0] - o * c[1], b0[1] + o * c[0]]];
     const dr = [[b0[0] + o * c[1], b0[1] + o * c[0]], [br[0] + o * c[1], br[1] + o * c[0]]];
     b += line(dl[0], dl[1], 0.8, 0.45) + line(dr[0], dr[1], 0.8, 0.45);
-    [dl[0], dl[1], dr[0], dr[1]].forEach((p) => { b += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.4" fill="#fff" opacity=".55"/>`; });
-    b += `<circle cx="118" cy="470" r="48" fill="none" stroke="#fff" stroke-width=".8" opacity=".22"/><path d="M118 414V526M62 470H174" stroke="#fff" stroke-width=".6" opacity=".18"/><path d="M118 428L128 470L118 462L108 470Z" fill="#fff" opacity=".3"/>`;
+    [dl[0], dl[1], dr[0], dr[1]].forEach((p) => { b += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.4" fill="${stroke}" opacity=".55"/>`; });
+    b += `<circle cx="118" cy="470" r="48" fill="none" stroke="${stroke}" stroke-width=".8" opacity=".22"/><path d="M118 414V526M62 470H174" stroke="${stroke}" stroke-width=".6" opacity=".18"/><path d="M118 428L128 470L118 462L108 470Z" fill="${stroke}" opacity=".3"/>`;
     return `<svg class="cover-lines" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${g}${b}</svg>`;
   }
   // Online base map: IGN for Spain. Other countries get a schematic map (markers, distances and scale stay exact)
@@ -492,9 +501,28 @@
       Math.abs(CH().project(mp.z, s.lat, s.lon)[1] - mp.y0 - mp.h / 2) < mp.h);
   }
 
+  // Classes and CSS variables of the cover layers (report.css, "cover layers"). The page colour is the background
+  // colour, or the shade colour under a map or a photo (as in 1.0.0).
+  function coverLook(ctx) {
+    const L = ctx.D.layers || coverModel(ctx.D);
+    const P = ctx.P;
+    const ink = coverInk(L, P, ctx.D);
+    const c1 = colorOf(L.bg.c1, P, ctx.D);
+    const c2 = colorOf(L.bg.c2, P, ctx.D);
+    const shade = colorOf(L.shade.color, P, ctx.D);
+    const base = L.bg.type === 'map' || L.bg.type === 'photo' ? shade : c1;
+    const cls = ['page--cover', `cv-bg-${L.bg.type}`, `cv-shape-${L.bg.shape}`, `cv-shade-${L.shade.mode}`, `cv-motif-${L.motif.type}`,
+      `cv-txt-${ink.dark ? 'dark' : 'light'}`, `cv-logo-${L.logo.pos}`, `cv-al-${L.text.align}`, (ctx.D.cover || {}).showPanel === false ? 'cv-nopanel' : '',
+      L.legacy ? 'cv-legacy' : ''];
+    const vars = { base, c1, c2, mid: mix(c1, c2, 0.5), ang: `${L.bg.angle}deg`, shade, so: Math.round(L.shade.opacity) / 100, 'logo-h': `${L.logo.size}mm`,
+      'logo-k': Math.round((L.logo.size / 14) * 1000) / 1000, band: P.brand };
+    return { L, ink, cls: cls.filter(Boolean).join(' '), style: Object.keys(vars).map((k) => `--cv-${k}:${vars[k]}`).join(';') + ';' };
+  }
+
   function pCover(ctx) {
     const { s, m, T, L } = ctx;
-    const style = ctx.D.coverStyle;
+    const look = ctx.look || coverLook(ctx);
+    const LY = look.L;
     const CV = ctx.D.cover || {};
     // Cover texts have an automatic default in every language: a custom text counts only in the language it was written in
     // (a plain string, or the language-neutral "_", counts in all of them).
@@ -510,13 +538,17 @@
       return CH().map(mp, [{ lat: s.lat, lon: s.lon, kind: 'subject', label: s.address }], { provider: mapProv(ctx), duotone: true, duo: [ctx.P.duoDark, ctx.P.duoLight], scaleBar: false, north: false, markerScale: 1.35, aspect: 1.18, ink: ctx.P.deep, title: 'Map' });
     };
     const img = photo ? `<img class="cover-photo" src="${esc(photo)}" alt="">` : '';
+    // The motif is drawn in the visual area, under the shade (as in 1.0.0): white on a dark cover, ink on a light one.
+    const light = !look.ink.dark;
+    const lines = (stroke) => (LY.motif.type === 'grid' ? coverBlueprint(stroke) : coverLines(stroke));
+    const motif = LY.motif.type === 'lines' || LY.motif.type === 'grid' ? lines(light ? (LY.motif.type === 'grid' ? '#fff' : '#ffffff') : ctx.D.ink) : '';
     let visual = '';
-    if (style === 'pattern') visual = CV.pattern === 'grid' ? coverBlueprint() : coverLines();
-    else if (style === 'photo') visual = img || map() || coverLines();
-    else if (style === 'map') visual = map() || img || coverLines();
-    const veil = isFinite(+CV.veil) && CV.veil !== '' && CV.veil != null ? ` style="opacity:${Math.max(0, Math.min(1, +CV.veil))}"` : '';
-    return `<div class="cover-visual">${visual}</div><div class="cover-shade"${veil}></div>
-<div class="cover-top">${logoHtml(ctx, !LIGHT_COVERS.includes(style), 'cover')}<div class="cover-ref"><span>${esc(T.reportTitle)}</span>${CV.showRef === false ? '' : `<strong>${esc(T.ref)} ${esc(m.reportNo)}</strong>`}</div></div>
+    if (LY.bg.type === 'photo') visual = img || map() || (motif ? '' : coverLines());
+    else if (LY.bg.type === 'map') visual = map() || img || (motif ? '' : coverLines());
+    const logo = logoHtml(ctx, light, 'cover', LY.logo.plate);
+    const bottomLogo = LY.logo.pos === 'bl';
+    return `<div class="cover-visual">${visual}${motif}</div><div class="cover-shade"></div>${LY.motif.type === 'band' ? '<div class="cover-band"></div>' : ''}
+<div class="cover-top">${bottomLogo ? '' : logo}<div class="cover-ref"><span>${esc(T.reportTitle)}</span>${CV.showRef === false ? '' : `<strong>${esc(T.ref)} ${esc(m.reportNo)}</strong>`}</div></div>
 <div class="cover-main">
   <div class="cover-kicker">${esc(txtOr('kicker', T.coverKicker))}</div>
   <h1 class="cover-title">${esc(txtOr('title', T.coverTitle))}<em>${esc(txtOr('titleEm', ctx.noun.of))}</em></h1>
@@ -528,6 +560,7 @@ ${CV.showPanel === false ? '' : `<div class="cover-panel">
   <div><span class="lbl">${esc(T.preparedBy)}</span><strong>${esc(m.advisor && m.advisor.name)}</strong><span>${esc([L(m.advisor && m.advisor.role), m.office && m.office.name].filter(Boolean).join(' · '))}</span></div>
   <div><span class="lbl">${esc(T.valuationDate)}</span><strong>${ctx.DATE(m.valuationDate)}</strong><span>${esc(T.visit)}: ${ctx.DATE(m.visitDate)}</span></div>
 </div>`}
+${bottomLogo ? `<div class="cover-logo-b">${logo}</div>` : ''}
 <div class="cover-foot"><span>${esc(txtOr('foot', T.coverFoot))}</span><span>${esc((m.office && m.office.web) || '')}</span></div>`;
   }
 
@@ -1261,7 +1294,8 @@ ${h3(T.uncLooTitle, T.uncLooSub)}
     try {
       const pages = [];
       const add = (sections, fn, cls) => pages.push({ sections, fn, cls });
-      add(['cover'], pCover, `page--cover cover--${ctx.D.coverStyle}${ctx.D.coverStyle === 'pattern' ? ` pat-${ctx.D.cover.pattern === 'grid' ? 'grid' : 'lines'} fill-${ctx.D.cover.fill === 'solid' ? 'solid' : 'gradient'}` : ''}`);
+      ctx.look = coverLook(ctx);
+      add(['cover'], pCover, ctx.look.cls);
       if (on('summary')) add(['summary'], pSummary, 'page--summary');
       if (on('toc') || on('letter')) add(['toc'], pTocLetter);
       ctx.order.forEach((id) => {
@@ -1316,7 +1350,7 @@ ${h3(T.uncLooTitle, T.uncLooSub)}
       return withCurrency(pages.map((p) => {
         const body = p.fn(ctx);
         const attrs = `class="page ${p.cls || ''}" data-page="${p.n}" data-sections="${p.sections.join(' ')}" lang="${ctx.lang}"`;
-        if (p.sections[0] === 'cover') return `<section ${attrs}>${body}${wm}</section>`;
+        if (p.sections[0] === 'cover') return `<section ${attrs} style="${ctx.look.style}">${body}${wm}</section>`;
         const f = Number(fit[p.n]);
         const fitAttr = isFinite(f) && f >= 0.5 && f < 1 ? ` style="--fit:${Math.round(f * 1000) / 1000}"` : '';
         return `<section ${attrs}><header class="pg-head">${logoHtml(ctx, false, 'head')}<span class="pg-head-txt">${esc(head)}</span></header>` +
