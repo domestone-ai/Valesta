@@ -180,13 +180,13 @@ These are finding F-21, fixed: the report then prints no interval in the letter,
 ### How the report shows it
 
 The report shows each approach with its inputs, and a reconciliation table with each value and its normalised weight:
-`src/js/report.js:1113` (`function pApproaches`). The cover lists the approaches used:
-`src/js/report.js:1108` (`function methodsLine`). The report's note attributes the weights to the reliability of each
+`src/js/report.js:1116` (`function pApproaches`). The cover lists the approaches used:
+`src/js/report.js:1111` (`function methodsLine`). The report's note attributes the weights to the reliability of each
 approach for the property and the market:
 `src/js/report_i18n.js:694` (`The weights reflect how reliable each approach is`). The pre-release code added «(IVS
 103)», which could not be verified on the text (finding F-16, fixed).
 
-The valuer records the reasoning of the weights, and the report prints it: `src/js/report.js:1141` (`X.reasonTitle`).
+The valuer records the reasoning of the weights, and the report prints it: `src/js/report.js:1144` (`X.reasonTitle`).
 The quality review flags other approaches weighted without reasoning:
 `src/js/review.js:176` (`'method-reconciliation'`). The Spanish order requires stated and justified weights for
 comparables (art. 22.1.d of [ES-ECO805]). The international standards and the US literature are understood to expect an

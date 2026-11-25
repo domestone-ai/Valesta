@@ -10,7 +10,7 @@ The Valesta report refers to the international and European standards in several
 - **the basis of value:** `src/js/report_i18n.js:466` (`mvDef`), `src/js/report_i18n.js:467` (`mvCite`);
 - **the list of standards:** `src/js/report_i18n.js:472` (`stds`);
 - **the methodological references** of the sources chapter, with their verification status:
-  `src/js/report.js:1218` (`function pRefs`).
+  `src/js/report.js:1221` (`function pRefs`).
 
 The pre-release code also cited IVS sections and RICS VPS numbers in the uncertainty section, the method introduction,
 the reconciliation note, the list of standards and two quality checks. Those that could not be verified on the texts

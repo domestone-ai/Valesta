@@ -16,7 +16,7 @@ simulation. For a given seed the result is always the same.
 
 Three places call it:
 
-- the report runs 600 iterations: `src/js/report.js:1295` (`n: 600`);
+- the report runs 600 iterations: `src/js/report.js:1298` (`n: 600`);
 - the editor runs 600 iterations: `src/js/editor.js:1504` (`n: 600`);
 - the AI tools run 300 iterations: `src/js/aitools.js:363` (`n: 300`).
 
@@ -97,16 +97,16 @@ Each iteration then recomputes the valuation and keeps the unrounded value: `src
 
 ## 2.4 How the report presents it
 
-`src/js/report.js:1247` (`function pUncertainty`) shows:
+`src/js/report.js:1250` (`function pUncertainty`) shows:
 
 - **P10, P50 and P90**, rounded with the rounding step of the valuation:
-  `src/js/report.js:1081` (`function uncertaintyKpis`). The pre-release code rounded them to 1,000 whatever the currency
+  `src/js/report.js:1084` (`function uncertaintyKpis`). The pre-release code rounded them to 1,000 whatever the currency
   (finding F-08, fixed).
-- **The spread** ±h, where h = (P90 − P10) ÷ 2 ÷ V: `src/js/report.js:1085` (`mc.p90 - mc.p10`).
+- **The spread** ±h, where h = (P90 − P10) ÷ 2 ÷ V: `src/js/report.js:1088` (`mc.p90 - mc.p10`).
 - **A histogram** with the P10–P90 band.
 - **A bar chart** of the leave-one-out changes.
 
-The report then classifies the estimate: `src/js/report.js:1252` (`robust`). The thresholds are conventions of
+The report then classifies the estimate: `src/js/report.js:1255` (`robust`). The thresholds are conventions of
 Valesta, not taken from a standard or estimated from data.
 
 | Class | Condition |
