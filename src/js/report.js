@@ -156,6 +156,9 @@
   const LOGO_PLATES = ['auto', 'on', 'off'];
   const TEXT_COLORS = ['auto', 'light', 'dark'];
   const COLOR_TOKENS = ['brand', 'brandDeep', 'accent', 'white', 'ink'];
+  // The choices of each layer, as the editor offers them.
+  const COVER_OPTIONS = Object.freeze({ bg: COVER_BG, shapes: COVER_SHAPES, shades: SHADE_MODES, motifs: MOTIFS, logoPos: LOGO_POS, plates: LOGO_PLATES,
+    textColors: TEXT_COLORS, tokens: COLOR_TOKENS });
   const pick = (v, list, d) => (list.includes(v) ? v : d);
   const colorTok = (v, d) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : COLOR_TOKENS.includes(v) ? v : d);
   const bounded = (v, lo, hi, d) => { const n = Number(v); return v === '' || v == null || !isFinite(n) ? d : Math.max(lo, Math.min(hi, Math.round(n))); };
@@ -1438,5 +1441,5 @@ ${h3(T.uncLooTitle, T.uncLooSub)}
 
   return { render, sensitivityRows, uncertaintyKpis, inlineImages, fileTitle, autoTexts: autoTextsFor, documentHtml, documentTitle, brandCss, palette, numberToWords, dateEs, SECTION_IDS, roomGroup,
     designOf, usedFonts, filterFontCss, fitPages, FONT_STACKS, EMBEDDED_FONTS, LEGACY_FONTS, SECTION_KEYS, PRESETS, DEFAULT_DESIGN, COVER_STYLES, coverTexts,
-    coverModel, colorOf, contrast, coverInk };
+    coverModel, colorOf, contrast, coverInk, COVER_OPTIONS };
 });

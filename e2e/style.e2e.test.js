@@ -99,6 +99,7 @@ test('profiles: the bar shows the profile in use and its state; save as new, sav
   assert.ok(await page.$('#tab-body .prof [data-action="prof-dup"][data-id="valesta"]'), 'an example can be duplicated');
 
   // A change of the brand: the valuation no longer looks like the example; "save as new" becomes the main button.
+  await openSec(page, 'brand');
   await page.fill('#tab-body [data-bind="brand.name"]', 'Studio Rossi');
   await page.waitForSelector(`${BAR}[data-state="dirty"]`);
   assert.equal(await isMain(`${BAR} [data-action="prof-new"]`), true);
@@ -110,9 +111,11 @@ test('profiles: the bar shows the profile in use and its state; save as new, sav
   await page.waitForSelector(`${BAR}[data-state="saved"]`);
   assert.equal(await barName(), 'Studio Rossi');
   assert.equal(await windowOpen(page), false);
+  await openSec(page, 'profile');
   assert.ok((await labels()).includes('Studio Rossi'));
 
   // A change of an own profile: "save to the profile" is the main button and saves it.
+  await openSec(page, 'brand');
   await page.fill('#tab-body [data-bind="brand.name"]', 'Studio Rossi Valutazioni');
   await page.waitForSelector(`${BAR}[data-state="dirty"]`);
   assert.equal(await isMain(`${BAR} [data-action="prof-save"]`), true);
@@ -126,6 +129,7 @@ test('profiles: the bar shows the profile in use and its state; save as new, sav
   await page.fill('#dlg-name', 'Rossi – stile 2027');
   await page.click('#dlg button[type="submit"]');
   await page.waitForFunction(() => document.querySelector('#tab-body .prof-bar .pb-name').textContent.trim() === 'Rossi – stile 2027');
+  await openSec(page, 'profile');
   assert.ok((await labels()).includes('Rossi – stile 2027'));
   assert.equal(await barState(), 'saved', 'a new name is no change of the look');
 
@@ -172,5 +176,118 @@ test('the name window: a blank name is refused, Cancel closes it, on a phone it 
   await page.waitForFunction(() => !document.getElementById('dlg').open);
   assert.equal(await page.getAttribute(BAR, 'data-state'), 'example');
   assert.equal(await page.evaluate(() => document.getElementById('dlg').classList.contains('dlg-small')), false, 'the next window has its normal size');
+  assert.deepEqual(errors, []);
+});
+
+const tabSel = (k) => `#tab-body .st-tabs [role="tab"][data-key="${k}"]`;
+const openSec = async (page, k) => { await page.click(tabSel(k)); await page.waitForSelector(`${tabSel(k)}[aria-selected="true"]`); };
+// Moves a slider as a hand would: a new value and an input event.
+const slide = (page, sel, v) => page.$eval(sel, (el, x) => { el.value = x; el.dispatchEvent(new Event('input', { bubbles: true })); }, String(v));
+// True when the report page at the top of the preview is the cover (or, with cover = false, an inner page).
+const previewTop = (page, cover) => page.waitForFunction((want) => {
+  const top = document.getElementById('pv-scroll').getBoundingClientRect().top;
+  const p = [...document.querySelectorAll('#report .page')].find((x) => x.getBoundingClientRect().bottom > top + 40);
+  return !!p && p.classList.contains('page--cover') === want;
+}, cover);
+
+test('style step: six sections as tabs; arrow keys, Home and End move between them; the choice is kept; the preview shows the page of the section', async (t) => {
+  const { page, outside, errors } = await session(t);
+  await goStep(page, 'style');
+  const keys = await page.$$eval('#tab-body .st-tabs [role="tab"]', (els) => els.map((e) => e.dataset.key));
+  assert.deepEqual(keys, ['profile', 'model', 'brand', 'cover', 'type', 'pages']);
+  assert.equal(await page.getAttribute(tabSel('profile'), 'aria-selected'), 'true', 'the profiles come first');
+  assert.ok(await page.$('#st-panel[role="tabpanel"] .prof-grid'));
+  assert.ok((await page.textContent('#st-panel .st-lead')).trim().length > 20, 'each section says what it does');
+  await page.focus(tabSel('profile'));
+  await page.keyboard.press('ArrowRight');
+  await page.waitForSelector(`${tabSel('model')}[aria-selected="true"]`);
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.key), 'model', 'the focus follows');
+  assert.ok(await page.$('#st-panel [data-action="design-preset"][data-key="full"]'));
+  await page.keyboard.press('End');
+  await page.waitForSelector(`${tabSel('pages')}[aria-selected="true"]`);
+  await page.keyboard.press('Home');
+  await page.waitForSelector(`${tabSel('profile')}[aria-selected="true"]`);
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForSelector(`${tabSel('pages')}[aria-selected="true"]`);
+  assert.equal(await page.$$eval('#tab-body .st-tabs [role="tab"][tabindex="0"]', (els) => els.length), 1, 'one tab in the Tab order');
+  await previewTop(page, false);
+  await openSec(page, 'brand');
+  assert.ok(await page.$('#st-panel [data-bind="brand.primary"]'));
+  assert.ok(await page.$('#st-panel [data-bind="meta.office.name"]'), 'the agency data are in the brand section');
+  await openSec(page, 'cover');
+  await previewTop(page, true);
+  await openSec(page, 'type');
+  await page.reload();
+  await page.waitForSelector('#side [data-step]', { state: 'attached' });
+  await goStep(page, 'style');
+  assert.equal(await page.getAttribute(tabSel('type'), 'aria-selected'), 'true', 'the section is kept');
+  assert.deepEqual(outside, []);
+  assert.deepEqual(errors, []);
+});
+
+test('cover designer: a white background stays white with dark texts; the logo slider and position change the cover; a weak contrast is reported', async (t) => {
+  const { page, outside, errors } = await session(t);
+  await goStep(page, 'style');
+  await openSec(page, 'cover');
+  const cover = '#report .page--cover';
+  const hasCls = (c) => page.waitForFunction(([sel, x]) => document.querySelector(sel).classList.contains(x), [cover, c]);
+  for (const k of ['map', 'photo', 'pattern', 'minimal']) assert.ok(await page.$(`#st-panel [data-action="cv-start"][data-key="${k}"]`), k);
+  assert.equal(await page.evaluate(() => (window.__valesta.state.design.cover || {}).bg), undefined, 'looking writes nothing');
+  await page.click('#st-panel [data-action="cv-set"][data-key="bg.type"][data-val="solid"]');
+  await hasCls('cv-bg-solid');
+  assert.equal(await page.evaluate(() => window.__valesta.state.design.cover.shade.opacity), 0, 'the shade of the map does not stay over a colour');
+  await page.click('#st-panel [data-action="cv-set"][data-key="bg.c1"][data-val="white"]');
+  await page.waitForFunction((sel) => getComputedStyle(document.querySelector(sel + ' .cover-visual')).backgroundColor === 'rgb(255, 255, 255)', cover);
+  await hasCls('cv-txt-dark');
+  assert.notEqual(await page.$eval(`${cover} .cover-title`, (e) => getComputedStyle(e).color), 'rgb(255, 255, 255)', 'dark title');
+  assert.equal(await page.getAttribute('#st-panel [data-action="cv-set"][data-key="bg.c1"][data-val="white"]', 'aria-pressed'), 'true');
+  const note = '#st-panel [data-live="cv-contrast"]';
+  assert.equal(await page.$eval(note, (e) => e.classList.contains('low')), false);
+  assert.equal(await page.getAttribute(note, 'role'), 'status');
+  await page.click('#st-panel [data-action="cv-set"][data-key="text.color"][data-val="light"]');
+  await page.waitForSelector(`${note}.low`);
+  await page.click('#st-panel [data-action="cv-set"][data-key="text.color"][data-val="auto"]');
+  await page.waitForSelector(`${note}:not(.low)`);
+  await slide(page, '#st-panel input[data-bind="design.cover.logo.size"]', 24);
+  await page.waitForFunction((sel) => /--cv-logo-h:\s*24mm/.test(document.querySelector(sel).getAttribute('style')), cover);
+  assert.equal((await page.textContent('#st-panel output[for="cv-logo-size"]')).trim(), '24 mm');
+  await page.click('#st-panel [data-action="cv-set"][data-key="logo.pos"][data-val="tc"]');
+  await hasCls('cv-logo-tc');
+  await page.click('#st-panel [data-action="cv-set"][data-key="bg.type"][data-val="gradient"]');
+  await hasCls('cv-bg-gradient');
+  assert.ok(await page.$('#st-panel input[data-bind="design.cover.bg.angle"]'), 'a gradient has a direction');
+  assert.ok(await page.$('#st-panel [data-action="cv-set"][data-key="bg.c2"][data-val="accent"]'), 'and a second colour');
+  await slide(page, '#st-panel input[data-bind="design.cover.shade.opacity"]', 40);
+  await page.waitForFunction((sel) => /--cv-so:\s*0?\.4/.test(document.querySelector(sel).getAttribute('style')), cover);
+  await page.click('#st-panel [data-action="cv-start"][data-key="map"]');
+  await hasCls('cv-bg-map');
+  const L = await page.evaluate(() => window.__valesta.state.design.cover);
+  assert.equal(L.bg.type, 'map');
+  assert.equal(L.logo.size, 24, 'a starting point keeps the logo');
+  assert.equal(L.logo.pos, 'tc');
+  assert.deepEqual(outside, []);
+  assert.deepEqual(errors, []);
+});
+
+test('type and pages: a font pair sets both fonts; the size slider, the spacing and the logo of the headers change the report', async (t) => {
+  const { page, outside, errors } = await session(t);
+  await goStep(page, 'style');
+  await openSec(page, 'type');
+  const css = (re) => page.waitForFunction((src) => new RegExp(src).test(document.getElementById('css-brand').textContent), re.source);
+  await page.click('#st-panel [data-action="type-pair"][data-key="modern"]');
+  await css(/--serif:'Montserrat'/);
+  assert.equal(await page.getAttribute('#st-panel [data-action="type-pair"][data-key="modern"]', 'aria-pressed'), 'true');
+  await slide(page, '#st-panel input[data-bind="design.textScale"]', 1.1);
+  await css(/--ts:1\.1[;}]/);
+  assert.equal((await page.textContent('#st-panel output[for="ty-scale"]')).trim(), '110%');
+  await page.click('#st-panel [data-action="design-set"][data-key="density"][data-val="airy"]');
+  await css(/--lh:1\.6/);
+  assert.ok(await page.$('#st-panel .font-preview'), 'a sample on paper');
+  await openSec(page, 'pages');
+  await page.click('#st-panel [data-action="design-set"][data-key="headerLogo"][data-val="L"]');
+  await css(/--hl:9mm/);
+  for (const p of ['design.footerNote', 'design.watermark', 'design.pageNumbers', 'design.autoFit']) assert.ok(await page.$(`#st-panel [data-bind="${p}"]`), p);
+  assert.equal(await page.$eval('#st-panel [data-bind="design.pageNumbers"]', (e) => e.checked), true);
+  assert.deepEqual(outside, []);
   assert.deepEqual(errors, []);
 });

@@ -168,8 +168,8 @@
     o = o || {};
     return `<label class="fld${cls(o)}"><span>${esc(label)}</span><textarea data-bind="${p}" data-kind="text" rows="${o.rows || 3}">${esc(get(p) || '')}</textarea></label>`;
   }
-  function fColor(p, label) {
-    const v = get(p) || '#365C76';
+  function fColor(p, label, fallback) {
+    const v = get(p) || fallback || '#365C76';
     return `<label class="fld"><span>${esc(label)}</span><span class="color"><input type="color" data-bind="${p}" data-kind="color" value="${esc(v)}"><input type="text" data-bind="${p}" data-kind="hex" value="${esc(v)}" maxlength="7"></span></label>`;
   }
   const card = (title, body, sub, extra) => `<section class="card"><h3>${esc(title)}${sub ? ` <span class="sub">${esc(sub)}</span>` : ''}<span class="grow"></span>${extra || ''}</h3>${body}</section>`;
@@ -365,7 +365,7 @@
   function syncPreview() {
     if (!pvFollow || ctxTab !== 'preview' || screen !== 'step') return;
     const a = Workflow.STEPS[step] && Workflow.STEPS[step].anchor;
-    const el = a === 'cover' ? $('#report .page--cover') : a ? $('#sec-' + a) : null;
+    const el = step === 'style' ? stylePage() : a === 'cover' ? $('#report .page--cover') : a ? $('#sec-' + a) : null;
     const page = el && el.closest('.page');
     if (!page) return;
     const sc = $('#pv-scroll');
@@ -602,7 +602,7 @@
     identity: () => identityCard() + tabPratica(), features: () => tabImmobile(), areas: () => tabSuperfici(), photos: () => tabFoto(),
     comps: () => tabComparabili(), marketdata: () => tabMercato('data'), sources: () => tabMercato('sources'),
     adjust: () => tabOmog(), methods: () => tabMetodi(), result: () => tabRisultato() + toolNote(), checks: () => tabVerifiche() + qualityCard() + robustnessCard(),
-    content: () => tabTesti() + tabDesign('content'), style: () => profileBar() + tabDesign('style') + tabAgenzia(true), deliver: () => tabConsegna() + toolNote(),
+    content: () => tabTesti() + contentCards(), style: () => styleStep(), deliver: () => tabConsegna() + toolNote(),
   };
   function stepHeader(id) {
     const pos = Workflow.position(id);
@@ -1688,24 +1688,6 @@
     $('#dlg').classList.remove('dlg-small');
     if (nameWait) { const w = nameWait; nameWait = null; w(null); }
   }
-  function tabAgenzia(noAdvisor) {
-    const b = 'brand';
-    const o = 'meta.office';
-    const mode = state.brand.logoMode === 'custom' ? 'custom' : 'text';
-    return card(t('profLibT'), `<p class="hint" style="margin:0 0 10px">${esc(t('profLibHint'))}</p><div class="prof-grid">${allProfiles().map(profileCard).join('')}</div>
-      <div class="row-actions">${btn('prof-new', esc(t('profNew')))}${btn('profile-import', esc(t('profileImport')))}</div>
-      <p class="hint" style="margin:8px 0 0">${esc(t('profTrademark'))}</p>`) +
-      card(t('brandT'), `<div class="grid">
-      ${fText(b + '.name', t('brandName'))}${fSel(b + '.logoMode', t('logoMode'), [['text', t('logoText')], ['custom', t('logoCustom')]])}</div>
-      ${mode === 'custom' ? `<div class="grid mt"><div class="fld"><span>${esc(t('logoLight'))}</span>${logoBox('logoLight')}</div><div class="fld"><span>${esc(t('logoDark'))}</span>${logoBox('logoDark')}</div></div><p class="hint" style="margin-top:8px">${esc(t('logoHint'))}</p>` : ''}
-      <div class="grid mt">${fColor(b + '.primary', t('primary'))}${fColor(b + '.accent', t('accent'))}</div>
-      ${fLText(b + '.tagline', t('tagline'), { area: true, rows: 2, cls: 'mt' })}
-      <div class="row-actions">${fChk(b + '.showBand', t('showBand'))}<span class="grow"></span>${btn('brand-reset', esc(t('resetBrand')))}</div>`, t('colors')) +
-      card(t('officeT'), `<div class="grid">
-      ${fText(o + '.name', t('officeName'))}${fText(o + '.company', t('company'))}${fText(o + '.address', t('officeAddress'), { cls: 'span-all' })}
-      ${fText(o + '.phone', t('phone'), { type: 'tel' })}${fText(o + '.email', t('email'), { type: 'email' })}${fText(o + '.web', t('web'), { type: 'url' })}${fText(o + '.license', t('license'))}</div>`, t('officeNote')) +
-      (noAdvisor ? '' : card(t('cAdvisor'), `<div class="grid">${fText('meta.advisor.name', t('advisorName'))}${fLText('meta.advisor.role', t('role'))}</div>`, t('advisorNote')));
-  }
 
   // ---------- design tab ----------
   const FONT_LIST = [['Cormorant Garamond'], ['Literata'], ['Georgia', true], ['Inter'], ['Open Sans'], ['Montserrat'], ['Helvetica', true]];
@@ -1726,53 +1708,267 @@
       en: 'This document is a **market valuation** for advisory purposes and is not an official appraisal under Orden ECO/805/2003.\n\n- Its use is limited to the stated purpose.\n- It may not be reproduced in whole or in part without permission.\n- Third-party data are processed in accordance with the GDPR (EU) 2016/679.',
       es: 'Este documento es una **valoración de mercado** con fines de asesoramiento y no constituye una tasación oficial a efectos de la Orden ECO/805/2003.\n\n- Su uso queda limitado a la finalidad indicada.\n- No se permite su reproducción total o parcial sin autorización.\n- Los datos de terceros se tratan conforme al RGPD (UE) 2016/679.' } }),
   };
-  // Cover gallery: thumbnails of the cover styles in the brand colours, plus a custom cover image.
-  function coverGallery(D) {
-    const P = Report.palette(state.brand && state.brand.primary);
+  // ---------- style step: six sections ----------
+  // Profile · Report model · Brand · Cover · Type and spacing · Pages, as tabs (arrow keys, Home and End move between
+  // them). The open section is kept on this device; the preview shows the page that the section changes.
+  const STYLE_SECS = ['profile', 'model', 'brand', 'cover', 'type', 'pages'];
+  const STYLE_SEC_KEY = 'valesta-style-section';
+  let styleSec = (() => { try { const v = localStorage.getItem(STYLE_SEC_KEY); return STYLE_SECS.includes(v) ? v : 'profile'; } catch (e) { return 'profile'; } })();
+  const STYLE_PAGES = { profile: ['cover'], model: ['toc', 'summary', 'letter'], brand: ['cover'], cover: ['cover'], type: ['letter', 'summary', 'scope'], pages: ['location', 'description', 'scope'] };
+  // The report page for the open section: the cover, or the first page that has one of the sections of the list.
+  function stylePage() {
+    for (const s of STYLE_PAGES[styleSec] || ['cover']) {
+      const el = s === 'cover' ? $('#report .page--cover') : $(`#report .page[data-sections~="${s}"]`);
+      if (el) return el;
+    }
+    return $('#report .page--cover');
+  }
+  function styleStep() {
+    const tabs = STYLE_SECS.map((k) => `<button type="button" role="tab" class="st-tab" id="st-tab-${k}" aria-controls="st-panel" aria-selected="${k === styleSec}" tabindex="${k === styleSec ? 0 : -1}" data-action="st-sec" data-key="${k}">${esc(t('stSecs')[k])}</button>`).join('');
+    const body = { profile: profileLibrary, model: modelCard, brand: brandCards, cover: coverDesigner, type: typeCards, pages: pagesCards }[styleSec]();
+    return `${profileBar()}<div class="st-tabs" role="tablist" aria-label="${esc(Workflow.stepLabel('style', uiLang))}">${tabs}</div>
+      <div class="st-panel" id="st-panel" role="tabpanel" aria-labelledby="st-tab-${styleSec}"><p class="st-lead">${esc(t('stSecsLead')[styleSec])}</p>${body}</div>`;
+  }
+  function setStyleSec(k, focus) {
+    if (!STYLE_SECS.includes(k)) return;
+    styleSec = k;
+    try { localStorage.setItem(STYLE_SEC_KEY, k); } catch (e) { /* this visit only */ }
+    renderTab();
+    if (focus) { const el = $('#st-tab-' + k); if (el) el.focus(); }
+    syncPreview();
+  }
+  function onStyleTabsKey(e) {
+    const tab = e.target.closest && e.target.closest('.st-tabs [role="tab"]');
+    if (!tab) return;
+    const i = STYLE_SECS.indexOf(tab.dataset.key);
+    const n = STYLE_SECS.length;
+    const to = { ArrowRight: (i + 1) % n, ArrowLeft: (i + n - 1) % n, Home: 0, End: n - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    setStyleSec(STYLE_SECS[to], true);
+  }
+  // A row of choices (buttons with aria-pressed), its label and a sentence that says what it does. "bare": the group
+  // title above already names the choice, so the label is for screen readers only.
+  function segField(label, action, key, cur, opts, hint, bare) {
+    const id = 'sg-' + key.replace(/[^a-z0-9]/gi, '-');
+    const b = opts.map(([v, l]) => {
+      const on = String(cur) === String(v);
+      return `<button type="button" class="seg-btn${on ? ' on' : ''}" data-action="${action}" data-key="${key}" data-val="${esc(v)}" aria-pressed="${on}">${esc(l)}</button>`;
+    }).join('');
+    const head = bare ? '' : `<span class="seg-l" id="${id}">${esc(label)}</span>`;
+    return `<div class="seg-field">${head}<div class="seg-row" role="group" ${bare ? `aria-label="${esc(label)}"` : `aria-labelledby="${id}"`}>${b}</div>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
+  }
+  // A slider and its value, which follows the slider while it moves (onField).
+  const fmtOut = (v, fmt) => (fmt === 'mm' ? `${N(v)} mm` : fmt === 'scale' ? `${Math.round(v * 100)}%` : fmt === 'pct' ? `${Math.round(v)}%` : fmt === 'deg' ? `${Math.round(v)}°` : N(v));
+  function rangeField(id, path, label, [min, max, step], value, fmt, hint) {
+    return `<div class="fld range-fld"><label for="${id}">${esc(label)}</label><div class="range-row"><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" data-bind="${path}" data-kind="num" data-fmt="${fmt}" value="${esc(value)}"><output for="${id}">${esc(fmtOut(value, fmt))}</output></div>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</div>`;
+  }
+
+  // ---------- profile, report model, brand ----------
+  function profileLibrary() {
+    return card(t('profLibT'), `<p class="hint" style="margin:0 0 10px">${esc(t('profLibHint'))}</p><div class="prof-grid">${allProfiles().map(profileCard).join('')}</div>
+      <div class="row-actions">${btn('prof-new', esc(t('profNew')))}${btn('profile-import', esc(t('profileImport')))}</div>
+      <p class="hint" style="margin:8px 0 0">${esc(t('profTrademark'))}</p>`);
+  }
+  // Report models: each option says what it does; the pressed one has a border, a tint and a check.
+  function modelCard() {
+    const preset = Report.designOf(state).preset;
+    const presets = Object.keys(Report.PRESETS).map((k) => `<button type="button" class="preset-opt${preset === k ? ' on' : ''}" data-action="design-preset" data-key="${k}" aria-pressed="${preset === k}">${preset === k ? `<span class="po-check" aria-hidden="true">${ic('check')}</span>` : ''}<b>${esc(t('dPresets')[k])}</b><small>${esc(t('dPresetsDesc')[k])}</small></button>`).join('');
+    return card(t('dPresetT'), `<div class="preset-grid" role="group" aria-label="${esc(t('dPresetT'))}">${presets}</div><p class="hint" style="margin:10px 0 0">${esc(t('dPresetHint'))}</p>
+      <div class="row-actions">${btn('goto-step', `${esc(t('modelGo'))}${ic('chev')}`, { key: 'content' })}</div>`);
+  }
+  function brandCards() {
+    const b = 'brand';
+    const o = 'meta.office';
+    const mode = state.brand.logoMode === 'custom' ? 'custom' : 'text';
+    return card(t('brandT'), `<div class="grid">
+      ${fText(b + '.name', t('brandName'))}${fSel(b + '.logoMode', t('logoMode'), [['text', t('logoText')], ['custom', t('logoCustom')]])}</div>
+      ${mode === 'custom' ? `<div class="grid mt"><div class="fld"><span>${esc(t('logoLight'))}</span>${logoBox('logoLight')}</div><div class="fld"><span>${esc(t('logoDark'))}</span>${logoBox('logoDark')}</div></div><p class="hint" style="margin-top:8px">${esc(t('logoHint'))}</p>` : ''}
+      <div class="grid mt">${fColor(b + '.primary', t('primary'))}${fColor(b + '.accent', t('accent'))}</div>
+      ${fLText(b + '.tagline', t('tagline'), { area: true, rows: 2, cls: 'mt' })}
+      <div class="row-actions">${fChk(b + '.showBand', t('showBand'))}<span class="grow"></span>${btn('brand-reset', esc(t('resetBrand')))}</div>`, t('colors')) +
+      card(t('officeT'), `<div class="grid">
+      ${fText(o + '.name', t('officeName'))}${fText(o + '.company', t('company'))}${fText(o + '.address', t('officeAddress'), { cls: 'span-all' })}
+      ${fText(o + '.phone', t('phone'), { type: 'tel' })}${fText(o + '.email', t('email'), { type: 'email' })}${fText(o + '.web', t('web'), { type: 'url' })}${fText(o + '.license', t('license'))}</div>`, t('officeNote'));
+  }
+
+  // ---------- cover designer: starting points and layers ----------
+  // The layers of Report.coverModel: background, shade, motif, logo and texts. A cover of 1.0.0 is shown as layers and
+  // nothing is written until the user changes something; the first change writes every layer, so the other layers keep
+  // their look. Colours are a brand token (they follow the brand colours) or a fixed colour.
+  const CV_STARTS = {
+    map: { bg: { type: 'map' }, shade: { color: 'brandDeep', opacity: 100, mode: 'frame' }, motif: { type: 'none' } },
+    photo: { bg: { type: 'photo' }, shade: { color: 'brandDeep', opacity: 100, mode: 'frame' }, motif: { type: 'none' } },
+    pattern: { bg: { type: 'gradient', shape: 'linear', c1: 'brandDeep', c2: 'brand', angle: 155 }, shade: { color: 'brandDeep', opacity: 0, mode: 'frame' }, motif: { type: 'lines' } },
+    minimal: { bg: { type: 'solid', c1: 'white' }, shade: { color: 'brandDeep', opacity: 0, mode: 'frame' }, motif: { type: 'band' } },
+  };
+  const CV_TOKENS = ['brandDeep', 'brand', 'accent', 'white', 'ink'];
+  const CV_NUM = ['size', 'opacity', 'angle'];
+  const IMAGE_BG = ['map', 'photo'];
+  function ensureLayers() {
+    const d = state.design = state.design || {};
+    const L = Report.coverModel(d);
+    if (!L.legacy) return;
+    const c = Object.assign({}, d.cover || {});
+    ['bg', 'shade', 'motif', 'logo', 'text'].forEach((k) => { c[k] = Object.assign({}, L[k]); });
+    d.cover = c;
+  }
+  // The closest 1.0.0 cover, for Valesta 1.0.0 when it opens this valuation or profile (it does not read the layers).
+  function legacyCover() {
+    const d = state.design;
+    const c = d.cover;
+    const L = Report.coverModel(d);
+    delete c.pattern; delete c.fill; delete c.veil;
+    if (L.bg.type === 'map' || L.bg.type === 'photo') { d.coverStyle = L.bg.type; c.veil = L.shade.opacity / 100; }
+    else if (L.motif.type === 'band') d.coverStyle = 'minimal';
+    else { d.coverStyle = 'pattern'; c.pattern = L.motif.type === 'grid' ? 'grid' : 'lines'; c.fill = L.bg.type === 'solid' ? 'solid' : 'gradient'; }
+  }
+  function setLayer(key, v) {
+    ensureLayers();
+    const [g, k] = key.split('.');
+    const c = state.design.cover;
+    // A background of the other kind (image or colour) starts with its own shade: full over a map or a photo, none over
+    // a colour, so that a white background stays white.
+    if (key === 'bg.type' && IMAGE_BG.includes(v) !== IMAGE_BG.includes(c.bg.type)) c.shade = Object.assign({}, c.shade, { opacity: IMAGE_BG.includes(v) ? 100 : 0 });
+    c[g] = Object.assign({}, c[g], { [k]: CV_NUM.includes(k) ? Number(v) : v });
+    legacyCover();
+  }
+  function startCover(k) {
+    const s = CV_STARTS[k];
+    if (!s) return;
+    ensureLayers();
+    const c = state.design.cover;
+    c.bg = Object.assign({}, c.bg, s.bg);
+    c.shade = Object.assign({}, s.shade);
+    c.motif = Object.assign({}, s.motif);
+    c.text = Object.assign({}, c.text, { color: 'auto' });
+    legacyCover();
+  }
+  // Contrast of the cover texts on their background (WCAG 2.x): a note under the text colour, live while the user moves
+  // a slider or picks a colour.
+  function coverContrast() {
+    const r = Report.coverInk(Report.coverModel(state.design || {}), Report.palette(state.brand || {}), Report.designOf(state));
+    const low = r.ratio < 4.5;
+    return { low, text: (low ? t('cvContrastLow') : t('cvContrastOk'))(N(r.ratio, 1)) };
+  }
+  function syncCoverLive() {
+    const note = $('[data-live="cv-contrast"]');
+    if (!note) return;
+    const ink = coverContrast();
+    if (note.textContent !== ink.text) note.textContent = ink.text;
+    note.classList.toggle('low', ink.low);
+    const L = Report.coverModel(state.design || {});
+    $$('[data-live="cv-sw"]').forEach((g) => {
+      const [k, f] = g.dataset.key.split('.');
+      g.querySelectorAll('.cv-sw').forEach((b) => { const on = b.dataset.val === (L[k] || {})[f]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    });
+  }
+  // A colour: the brand tokens as swatches, or any colour (picker and hex field).
+  function cvColor(key, cur, label) {
+    const P = Report.palette(state.brand || {});
+    const D = Report.designOf(state);
+    const id = 'cvc-' + key.replace('.', '-');
+    const sw = CV_TOKENS.map((k) => {
+      const on = cur === k;
+      return `<button type="button" class="cv-sw${on ? ' on' : ''}" data-action="cv-set" data-key="${key}" data-val="${k}" aria-pressed="${on}" title="${esc(t('cvTokens')[k])}" aria-label="${esc(t('cvTokens')[k])}" style="--sw:${esc(Report.colorOf(k, P, D))}"></button>`;
+    }).join('');
+    const hex = Report.colorOf(cur, P, D);
+    return `<div class="fld cv-color"><span id="${id}">${esc(label)}</span><div class="cv-sws" role="group" aria-labelledby="${id}" data-live="cv-sw" data-key="${key}">${sw}
+      <span class="color"><input type="color" data-bind="design.cover.${key}" data-kind="color" value="${esc(hex)}" aria-label="${esc(t('cvColorPick'))}"><input type="text" data-bind="design.cover.${key}" data-kind="hex" value="${esc(hex)}" maxlength="7" aria-label="${esc(t('cvColorPick'))}"></span></div></div>`;
+  }
+  function coverDesigner() {
+    const D = state.design || {};
+    const L = Report.coverModel(D);
+    const P = Report.palette(state.brand || {});
+    const O = Report.COVER_OPTIONS;
     const img = D.coverImage;
-    const DD = Report.designOf(state);
-    const style = DD.coverStyle;
-    const CV = Object.assign({ pattern: 'lines', fill: 'gradient' }, DD.cover || {});
     const auto = Report.coverTexts(state);
-    const items = Report.COVER_STYLES.map((k) => `<button type="button" class="cv-opt${style === k ? ' on' : ''}" data-action="cover-style" data-key="${k}" aria-pressed="${style === k}">
-      ${style === k ? `<span class="po-check" aria-hidden="true">${ic('check')}</span>` : ''}<span class="cv cv--${k}" aria-hidden="true"><i class="v"></i><i class="t1"></i><i class="t2"></i><i class="p"></i></span><b>${esc(t('covers')[k])}</b><small>${esc(t('coversHint')[k])}</small></button>`).join('');
-    const seg = (act, cur, opts) => opts.map(([v, l]) => `<button type="button" class="seg-btn${cur === v ? ' on' : ''}" data-action="${act}" data-key="${v}">${esc(l)}</button>`).join('');
-    const sub = style === 'pattern'
-      ? `<div class="cv-sub"><div><span class="seg-l">${esc(t('cvPattern'))}</span><span class="seg">${seg('cover-pattern', CV.pattern, [['lines', t('cvLines')], ['grid', t('cvGrid')]])}</span></div>
-        <div><span class="seg-l">${esc(t('cvFill'))}</span><span class="seg">${seg('cover-fill', CV.fill, [['gradient', t('cvGradient')], ['solid', t('cvSolid')]])}</span></div></div>`
-      : style === 'map' && !hasPos(state.subject) ? `<p class="hint" style="margin-top:12px">${esc(t('cvMapNoPos'))}</p>` : '';
-    const veil = style === 'map' || style === 'photo'
-      ? `<label class="cv-veil"><span>${esc(t('cvVeil'))}</span><input type="range" min="0" max="1" step="0.05" data-bind="design.cover.veil" data-kind="num" value="${esc(CV.veil == null ? 1 : CV.veil)}"></label>` : '';
-    const texts = `<div class="cv-texts"><h4>${esc(t('cvTextsT'))}</h4><p class="hint">${esc(t('cvAutoHint'))}</p><div class="grid">
+    const opts = (list, names) => list.map((v) => [v, names[v]]);
+    const starts = Object.keys(CV_STARTS).map((k) => `<button type="button" class="cv-opt" data-action="cv-start" data-key="${k}"><span class="cv cv--${k}" aria-hidden="true"><i class="v"></i><i class="t1"></i><i class="t2"></i><i class="p"></i></span><b>${esc(t('covers')[k])}</b><small>${esc(t('coversHint')[k])}</small></button>`).join('');
+    const bg = L.bg;
+    const bgMore = bg.type === 'solid' ? cvColor('bg.c1', bg.c1, t('cvColor'))
+      : bg.type === 'gradient' ? cvColor('bg.c1', bg.c1, t('cvFrom')) + cvColor('bg.c2', bg.c2, t('cvTo')) +
+        segField(t('cvShapeT'), 'cv-set', 'bg.shape', bg.shape, opts(O.shapes, t('cvShapes'))) +
+        (bg.shape === 'linear' ? rangeField('cv-angle', 'design.cover.bg.angle', t('cvAngle'), [0, 360, 5], bg.angle, 'deg') : '')
+        : `<p class="hint">${esc(bg.type === 'photo' ? t('cvPhotoHint') : hasPos(state.subject) ? t('coversHint').map : t('cvMapNoPos'))}</p>`;
+    const brandGo = bg.type === 'solid' || bg.type === 'gradient' ? `<div class="brand-go">${btn('goto-brand', `${esc(t('brandGo'))}${ic('chev')}`)}<span class="hint">${esc(t('cvTokensHint'))}</span></div>` : '';
+    const group = (k, title, hint, body) => `<section class="cv-group" data-cv-group="${k}"><h4>${esc(title)}</h4>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}${body}</section>`;
+    const ink = coverContrast();
+    return card(t('cvStartT'), `<p class="hint" style="margin:0 0 10px">${esc(t('cvStartHint'))}</p><div class="cv-grid" style="--cvb:${esc(P.brand)};--cvd:${esc(P.deep)};--cva:${esc(P.accent)}">${starts}</div>`) +
+      card(t('dCoverT'), [
+        group('bg', t('cvBgT'), t('cvBgHint'), segField(t('cvBgT'), 'cv-set', 'bg.type', bg.type, opts(O.bg, t('cvBgTypes')), '', true) + bgMore + brandGo),
+        group('shade', t('cvShadeT'), t('cvShadeHint'), cvColor('shade.color', L.shade.color, t('cvColor')) +
+          rangeField('cv-shade', 'design.cover.shade.opacity', t('cvOpacity'), [0, 100, 5], L.shade.opacity, 'pct') +
+          segField(t('cvShadeModeT'), 'cv-set', 'shade.mode', L.shade.mode, opts(O.shades, t('cvShadeModes')))),
+        group('motif', t('cvMotifT'), t('cvMotifHint'), segField(t('cvMotifT'), 'cv-set', 'motif.type', L.motif.type, opts(O.motifs, t('cvMotifs')), '', true)),
+        group('logo', t('cvLogoT'), t('cvLogoHint'), rangeField('cv-logo-size', 'design.cover.logo.size', t('cvLogoSize'), [6, 30, 1], L.logo.size, 'mm') +
+          segField(t('cvLogoPosT'), 'cv-set', 'logo.pos', L.logo.pos, opts(O.logoPos, t('cvLogoPos'))) +
+          segField(t('cvPlateT'), 'cv-set', 'logo.plate', L.logo.plate, opts(O.plates, t('cvPlates')), t('cvPlateHint'))),
+        group('text', t('cvTextT'), '', segField(t('cvTextColorT'), 'cv-set', 'text.color', L.text.color, opts(O.textColors, t('cvTextColors'))) +
+          segField(t('cvAlignT'), 'cv-set', 'text.align', L.text.align, opts(['left', 'center'], t('cvAligns'))) +
+          `<p class="cv-contrast${ink.low ? ' low' : ''}" data-live="cv-contrast" role="status">${esc(ink.text)}</p>`),
+      ].join('')) +
+      card(t('cvTextsT'), `<p class="hint" style="margin:0 0 10px">${esc(t('cvAutoHint'))}</p><div class="grid">
       ${fLText('design.cover.kicker', t('cvKicker'), { ph: auto.kicker, exact: true })}${fLText('design.cover.title', t('cvTitle'), { ph: auto.title, exact: true })}
       ${fLText('design.cover.titleEm', t('cvTitleEm'), { ph: auto.titleEm, cls: 'span-all', exact: true })}
       ${fLText('design.cover.standards', t('cvStd'), { ph: auto.standards, cls: 'span-all', exact: true })}
       ${fLText('design.cover.foot', t('cvFoot'), { ph: auto.foot, cls: 'span-all', exact: true })}</div>
       <div class="cv-flags">${fChk('design.cover.showRef', t('cvShowRef'), true)}${fChk('design.cover.showStandards', t('cvShowStd'), true)}${fChk('design.cover.showPanel', t('cvShowPanel'), true)}</div>
-      ${veil}<div class="row-actions">${btn('cover-reset', esc(t('cvReset')))}</div></div>`;
-    return `<div class="cv-grid" style="--cvb:${esc(P.brand)};--cvd:${esc(P.deep)};--cva:${esc(P.accent)}">${items}</div>${sub}
-      <div class="cv-custom"><div class="logo-box cv-img">${img ? `<img src="${esc(img)}" alt="">` : `<span>${esc(t('coverImgNone'))}</span>`}</div>
-      <div><b>${esc(t('coverImgT'))}</b><p class="hint">${esc(t('coverImgHint'))}</p><div class="row-actions">${btn('logo-upload', esc(t('upload')), { key: 'coverImage', cls: 'btn-primary' })}${img ? btn('cover-img-del', esc(t('remove')), { cls: 'btn-danger' }) : ''}</div></div></div>${texts}`;
+      <div class="row-actions">${btn('cover-reset', esc(t('cvReset')))}</div>`) +
+      card(t('coverImgT'), `<div class="cv-custom"><div class="logo-box cv-img">${img ? `<img src="${esc(img)}" alt="">` : `<span>${esc(t('coverImgNone'))}</span>`}</div>
+      <div><p class="hint">${esc(t('coverImgHint'))}</p><div class="row-actions">${btn('logo-upload', esc(t('upload')), { key: 'coverImage', cls: 'btn-primary' })}${img ? btn('cover-img-del', esc(t('remove')), { cls: 'btn-danger' }) : ''}</div></div></div>`);
   }
-  // Sample of the report type on paper (white in both themes, as printed): title font, body font, a figure, a small table
-  // and a note, in the ink and size chosen. The figures are those of the valuation.
+
+  // ---------- type and spacing ----------
+  const TYPE_PAIRS = { classic: ['Cormorant Garamond', 'Inter'], modern: ['Montserrat', 'Inter'], editorial: ['Literata', 'Open Sans'], plain: ['Inter', 'Inter'] };
+  // Sample of the report type on paper (white in both themes, as printed): title font, a paragraph, a figure, a small
+  // table and a note, in the ink, size and spacing chosen. The figures are those of the valuation.
   function fontSample() {
     const DD = Report.designOf(state);
     const ink = isHex(DD.ink) ? `;--fi:${DD.ink}` : '';
-    return `<div class="font-preview" style="--fh:${esc(Report.FONT_STACKS[DD.fontHead] || '')};--fb:${esc(Report.FONT_STACKS[DD.fontBody] || '')}${ink};--fs:${Number(DD.textScale) || 1}">
+    const lh = { compact: 1.42, normal: 1.5, airy: 1.6 }[DD.density] || 1.5;
+    return `<div class="font-preview" style="--fh:${esc(Report.FONT_STACKS[DD.fontHead] || '')};--fb:${esc(Report.FONT_STACKS[DD.fontBody] || '')}${ink};--fs:${Number(DD.textScale) || 1};--flh:${lh}">
       <b>${esc(state.subject.address || 'Valesta')}</b>
+      <p>${esc(t('tySampleText'))}</p>
       <p>${esc(t('kValue'))}: <strong>${esc(EUR(res.total))}</strong></p>
       <table><tbody><tr><td>${esc(t('resUnit'))}</td><td>${res.unitValue != null ? esc(`${N(res.unitValue)} ${CURS()}/m²`) : '—'}</td></tr>
       <tr><td>${esc(t('ctArea'))}</td><td>${res.refArea != null ? esc(`${N(res.refArea, res.refArea % 1 ? 2 : 0)} m²`) : '—'}</td></tr></tbody></table>
       <small>${esc(t('fsNote'))}</small></div>`;
   }
-  function tabDesign(part) {
-    const d = 'design';
-    const D = state.design || {};
+  function typeCards() {
+    const DD = Report.designOf(state);
     const fontOpts = FONT_LIST.map((f) => [f[0], `${f[0]}${f[1] ? ' · ' + t('fontSystem') : ''}`]);
-    // Report model: three options with what each one does; the pressed one has a border, a tint and a check.
-    const preset = Report.designOf(state).preset;
-    const presets = Object.keys(Report.PRESETS).map((k) => `<button type="button" class="preset-opt${preset === k ? ' on' : ''}" data-action="design-preset" data-key="${k}" aria-pressed="${preset === k}">${preset === k ? `<span class="po-check" aria-hidden="true">${ic('check')}</span>` : ''}<b>${esc(t('dPresets')[k])}</b><small>${esc(t('dPresetsDesc')[k])}</small></button>`).join('');
+    const pairs = Object.keys(TYPE_PAIRS).map((k) => {
+      const [h, b] = TYPE_PAIRS[k];
+      const on = DD.fontHead === h && DD.fontBody === b;
+      return `<button type="button" class="ty-pair${on ? ' on' : ''}" data-action="type-pair" data-key="${k}" aria-pressed="${on}">${on ? `<span class="po-check" aria-hidden="true">${ic('check')}</span>` : ''}<span class="ty-aa" aria-hidden="true"><span style="font-family:${esc(Report.FONT_STACKS[h] || '')}">Aa</span><span style="font-family:${esc(Report.FONT_STACKS[b] || '')}">Aa</span></span><b>${esc(t('tyPairs')[k])}</b><small>${esc(h === b ? h : `${h} · ${b}`)}</small></button>`;
+    }).join('');
+    return card(t('tyPairsT'), `<p class="hint" style="margin:0 0 10px">${esc(t('tyPairsHint'))}</p><div class="ty-pairs" role="group" aria-label="${esc(t('tyPairsT'))}">${pairs}</div>
+      <div class="sec-t">${esc(t('tyOwnT'))}</div><div class="grid">${fSel('design.fontHead', t('fontHead'), fontOpts)}${fSel('design.fontBody', t('fontBody'), fontOpts)}</div>`) +
+      card(t('tySizeT'), rangeField('ty-scale', 'design.textScale', t('textScale'), [0.85, 1.15, 0.05], DD.textScale, 'scale', t('tyScaleHint')) +
+        segField(t('density'), 'design-set', 'density', DD.density, Object.keys(t('densities')).map((k) => [k, t('densities')[k]]), t('tyDensityHint')) +
+        segField(t('radius'), 'design-set', 'radius', DD.radius, Object.keys(t('radii')).map((k) => [k, t('radii')[k]]), t('tyRadiusHint')) +
+        `<div class="grid mt">${fColor('design.ink', t('ink'), DD.ink)}</div><p class="hint">${esc(t('tyInkHint'))}</p>`) +
+      card(t('tySampleT'), fontSample());
+  }
+
+  // ---------- pages ----------
+  function pagesCards() {
+    const D = state.design || {};
+    const DD = Report.designOf(state);
+    const sig = state.meta.advisor && state.meta.advisor.signature;
+    return card(t('pgHeadT'), segField(t('pgHeadLogoT'), 'design-set', 'headerLogo', DD.headerLogo, ['S', 'M', 'L'].map((k) => [k, t('pgHeadLogos')[k]]), t('pgHeadLogoHint')) +
+      `<div class="grid mt">${fLText('design.footerNote', t('footerNote'), { cls: 'span-all' })}</div>
+      <div class="checks mt" style="grid-template-columns:1fr">${fChk('design.pageNumbers', t('pageNumbers'), true)}${fChk('design.autoFit', t('autoFit'), true)}</div>`) +
+      card(t('pgMarkT'), `<div class="grid">${fSel('design.watermark', t('watermark'), Object.keys(t('wms')).map((k) => [k, t('wms')[k]]))}${D.watermark === 'custom' ? fLText('design.watermarkText', t('wmText')) : '<span></span>'}</div>
+      <div class="fld mt"><span>${esc(t('signature'))}</span><div class="logo-box sig">${sig ? `<img src="${esc(sig)}" alt="">` : '<span>—</span>'}</div>
+      <div class="row-actions">${btn('logo-upload', esc(t('upload')), { key: 'signature' })}${sig ? btn('sig-remove', esc(t('remove')), { cls: 'btn-danger' }) : ''}</div>
+      <p class="hint" style="margin:6px 0 0">${esc(t('signatureHint'))}</p></div>`);
+  }
+
+  // ---------- contents step: chapters of the report and own chapters ----------
+  function contentCards() {
+    const D = state.design || {};
     const secRow = (k, child) => {
       const always = k === 'result';
       const note = k === 'photos' ? t('photosAuto') : always ? t('alwaysOn') : '';
@@ -1788,33 +1984,15 @@
         ${fLText(p + '.body', t('csBody'), { area: true, rows: 7, cls: 'mt' })}</div>`;
     }).join('');
     const tpls = Object.keys(t('csTpl')).map((k) => btn('cs-tpl', esc(t('csTpl')[k]), { key: k })).join('');
-    const sig = state.meta.advisor && state.meta.advisor.signature;
-    const all = [card(t('dPresetT'), `<div class="preset-grid" role="group" aria-label="${esc(t('dPresetT'))}">${presets}</div><p class="hint" style="margin:10px 0 0">${esc(t('dPresetHint'))}</p>`),
-      card(t('dTypoT'), `<div class="sec-t">${esc(t('dTypoGroup'))}</div><div class="grid">
-        ${fSel(d + '.fontHead', t('fontHead'), fontOpts)}${fSel(d + '.fontBody', t('fontBody'), fontOpts)}
-        ${fSel(d + '.textScale', t('textScale'), [[0.9, '90%'], [0.95, '95%'], [1, '100%'], [1.05, '105%'], [1.1, '110%']])}</div>
-        <div class="sec-t">${esc(t('dLookGroup'))}</div><div class="grid">
-        ${fSel(d + '.density', t('density'), Object.keys(t('densities')).map((k) => [k, t('densities')[k]]))}
-        ${fSel(d + '.radius', t('radius'), Object.keys(t('radii')).map((k) => [k, t('radii')[k]]))}${fColor(d + '.ink', t('ink'))}</div>
-        ${fontSample()}
-        <div class="brand-go"><button type="button" class="btn btn-sm" data-action="goto-brand">${esc(t('brandGo'))}${ic('chev')}</button><span class="hint">${esc(t('brandGoHint'))}</span></div>`),
-      card(t('dCoverT'), coverGallery(D)),
-      card(t('dSectionsT'), `<p class="hint" style="margin:0 0 8px">${esc(t('dSectionsHint'))}</p><div class="sec-list">${secs}</div>`),
-      card(t('dCustomT'), `<p class="hint" style="margin:0 0 8px">${esc(t('dCustomHint'))}</p>${cs}<div class="row-actions">${btn('cs-add', esc(t('csAdd')), { cls: 'btn-primary' })}<span class="hint" style="margin:0">${esc(t('csTemplates'))}</span>${tpls}</div>`),
-      card(t('dPageT'), `<div class="grid">
-        ${fSel(d + '.watermark', t('watermark'), Object.keys(t('wms')).map((k) => [k, t('wms')[k]]))}${D.watermark === 'custom' ? fLText(d + '.watermarkText', t('wmText')) : '<span></span>'}
-        ${fLText(d + '.footerNote', t('footerNote'), { cls: 'span-all' })}</div>
-        <div class="checks mt" style="grid-template-columns:1fr">${fChk(d + '.pageNumbers', t('pageNumbers'))}${fChk(d + '.autoFit', t('autoFit'))}</div>
-        <div class="fld mt"><span>${esc(t('signature'))}</span><div class="logo-box sig">${sig ? `<img src="${esc(sig)}" alt="">` : '<span>—</span>'}</div>
-        <div class="row-actions">${btn('logo-upload', esc(t('upload')), { key: 'signature' })}${sig ? btn('sig-remove', esc(t('remove')), { cls: 'btn-danger' }) : ''}</div>
-        <p class="hint" style="margin:6px 0 0">${esc(t('signatureHint'))}</p></div>`)];
-    return (part === 'content' ? [all[3], all[4]] : part === 'style' ? [all[0], all[1], all[2], all[5]] : all).join('');
+    return card(t('dSectionsT'), `<p class="hint" style="margin:0 0 8px">${esc(t('dSectionsHint'))}</p><div class="sec-list">${secs}</div>`) +
+      card(t('dCustomT'), `<p class="hint" style="margin:0 0 8px">${esc(t('dCustomHint'))}</p>${cs}<div class="row-actions">${btn('cs-add', esc(t('csAdd')), { cls: 'btn-primary' })}<span class="hint" style="margin:0">${esc(t('csTemplates'))}</span>${tpls}</div>`);
   }
 
   // ---------- live refresh (no input re-render) ----------
   function refreshLive() {
     syncMap();
     syncProfileBar();
+    syncCoverLive();
     $$('[data-live="rooms-total"]').forEach((el) => { el.textContent = res.usefulArea != null ? N(res.usefulArea, 2) + ' m²' : '—'; });
     $$('[data-live="ref-area"]').forEach((el) => { el.textContent = res.refArea != null ? N(res.refArea, res.refArea % 1 ? 2 : 0) + ' m²' : '—'; });
     $$('[data-live="poi-d"]').forEach((el) => {
@@ -2095,7 +2273,11 @@
       const twin = $$(`[data-bind="${p}"]`).find((x) => x !== el);
       if (twin) twin.value = v;
     } else v = el.value;
+    const layer = /^design\.cover\.(bg|shade|motif|logo|text)\./.test(p);
+    if (layer) ensureLayers();
+    if (el.type === 'range') { const o = $(`output[for="${el.id}"]`); if (o) o.textContent = fmtOut(v, el.dataset.fmt); }
     AppCore.setPath(state, p, v);
+    if (layer) legacyCover();
     aiTouch(p, el);
     if (/^design\.sections\./.test(p)) state.design.preset = '';
     const structural = /^comparables\.\d+\.(id|include)$/.test(p) || /^(settings\.scalePreset|brand\.logoMode|design\.(watermark|fontHead|fontBody)|design\.sections\.\w+|approaches\.\w+\.on|technical\.systems\.\w+\.status|design\.cover\.show\w+)$/.test(p);
@@ -2196,14 +2378,28 @@
         });
         return changed(true);
       }
-      case 'cover-style': state.design = Object.assign({}, state.design, { coverStyle: b.dataset.key }); return changed(true);
+      case 'st-sec': return setStyleSec(b.dataset.key, true);
+      case 'cv-set': setLayer(b.dataset.key, b.dataset.val); changed(true); return refocus(`[data-action="cv-set"][data-key="${b.dataset.key}"][data-val="${b.dataset.val}"]`);
+      case 'cv-start': startCover(b.dataset.key); changed(true); return refocus(`[data-action="cv-start"][data-key="${b.dataset.key}"]`);
+      case 'design-set': {
+        const k = b.dataset.key;
+        if (!['density', 'radius', 'headerLogo'].includes(k)) return;
+        state.design = Object.assign({}, state.design, { [k]: b.dataset.val });
+        changed(true);
+        return refocus(`[data-action="design-set"][data-key="${k}"][data-val="${b.dataset.val}"]`);
+      }
+      case 'type-pair': {
+        const pair = TYPE_PAIRS[b.dataset.key];
+        if (!pair) return;
+        state.design = Object.assign({}, state.design, { fontHead: pair[0], fontBody: pair[1] });
+        changed(true);
+        return refocus(`[data-action="type-pair"][data-key="${b.dataset.key}"]`);
+      }
       case 'cover-img-del': state.design = Object.assign({}, state.design, { coverImage: null }); return changed(true);
       case 'att-add': attTopic = b.dataset.key || ''; return $('#file-att').click();
       case 'att-del': (state.attachments || []).splice(i, 1); return changed(true);
       case 'ded-add': state.technical = state.technical || {}; (state.technical.deductions = state.technical.deductions || []).push({ label: '', amount: null }); return changed(true);
       case 'ded-del': state.technical.deductions.splice(i, 1); return changed(true);
-      case 'cover-pattern': state.design = Object.assign({}, state.design, { cover: Object.assign({}, state.design.cover, { pattern: b.dataset.key }) }); return changed(true);
-      case 'cover-fill': state.design = Object.assign({}, state.design, { cover: Object.assign({}, state.design.cover, { fill: b.dataset.key }) }); return changed(true);
       case 'cover-reset': {
         const c = Object.assign({}, state.design.cover);
         ['kicker', 'title', 'titleEm', 'standards', 'foot', 'veil', 'showRef', 'showStandards', 'showPanel'].forEach((k) => delete c[k]);
@@ -2302,11 +2498,7 @@
       case 'comp-down': if (swap(state.comparables, i, i + 1)) changed(true); return;
       case 'comp-toggle': { const c = state.comparables[i]; c.include = c.include === false; selComp = c.id; return changed(true); }
       // Style and brand: the colours of the report are set in the agency card further down the same page.
-      case 'goto-brand': {
-        const h = $$('#tab-body .card > h3').find((x) => x.textContent.trim().startsWith(t('brandT')));
-        if (h) { h.scrollIntoView({ block: 'start' }); h.tabIndex = -1; h.focus({ preventScroll: true }); }
-        return;
-      }
+      case 'goto-brand': return setStyleSec('brand', true);
       // From the comparison view to the card of the comparable: opened, in view, with the focus on its title.
       case 'comp-open': {
         if (!state.comparables[i]) return;
@@ -2818,6 +3010,7 @@
     const body = $('#tab-body');
     body.addEventListener('input', onField);
     body.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target && e.target.id === 'geo-coord') { e.preventDefault(); applyCoord(); } });
+    body.addEventListener('keydown', onStyleTabsKey);
     body.addEventListener('change', (e) => { if (e.target.matches('select, input[type=checkbox], input[type=date], input[type=color]')) onField(e); });
     const onUi = (e) => {
       const el = e.target;

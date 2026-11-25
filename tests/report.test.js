@@ -1302,3 +1302,17 @@ test('profiles: the demo looks like the Valesta profile when the design is read 
   demo.design.fontHead = 'Montserrat';
   assert.equal(AppCore.profileChanged(demo, Profiles.get('valesta').profile, read), true);
 });
+
+test('cover options: the editor offers the choices that the report reads', () => {
+  const O = Report.COVER_OPTIONS;
+  assert.deepEqual(O.bg, ['solid', 'gradient', 'map', 'photo']);
+  assert.deepEqual(O.shapes, ['linear', 'radial']);
+  assert.deepEqual(O.shades, ['frame', 'full', 'bottom', 'top']);
+  assert.deepEqual(O.motifs, ['none', 'lines', 'grid', 'band']);
+  assert.deepEqual(O.logoPos, ['tl', 'tc', 'tr', 'bl']);
+  assert.deepEqual(O.plates, ['auto', 'on', 'off']);
+  assert.deepEqual(O.textColors, ['auto', 'light', 'dark']);
+  assert.deepEqual(O.tokens, ['brand', 'brandDeep', 'accent', 'white', 'ink']);
+  assert.ok(Object.isFrozen(O));
+  for (const motif of O.motifs) assert.equal(Report.coverModel({ cover: { bg: { type: 'solid' }, motif: { type: motif } } }).motif.type, motif);
+});
