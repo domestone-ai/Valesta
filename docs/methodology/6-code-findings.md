@@ -54,7 +54,7 @@ Severity:
   value.
 - **Status: fixed.** One default, defined in the engine and used everywhere: `src/js/engine.js:226` (`function negotiationDefault`).
   - The simulation: `src/js/engine.js:569` (`const neg0 = negotiationDefault`).
-  - The report: `src/js/report.js:271` (`MCA().negotiationDefault`).
+  - The report: `src/js/report.js:352` (`MCA().negotiationDefault`).
 
 ## F-02 — New valuations inherit the demo's market inputs
 
@@ -72,13 +72,13 @@ Severity:
 - **What happened (pre-release).** The table recomputed the value of each estimator as unit value × area + annexes,
   rounded, leaving out deductions and the reconciliation, and measured its changes against the final value, which
   includes them.
-- **Status: fixed.** Every row is computed by the engine: `src/js/report.js:958` (`function sensitivityRows`).
+- **Status: fixed.** Every row is computed by the engine: `src/js/report.js:1063` (`function sensitivityRows`).
 
 ## F-04 — The report always speaks of «asking prices»
 
 - **What happened (pre-release).** The assumptions and the note under the sample table described the comparables as
   published asking prices, even when they were land-registry or closed sales, in every language.
-- **Status: fixed.** The wording follows the sources used (asking, transaction or both): `src/js/report.js:244` (`ctx.priceKind =`).
+- **Status: fixed.** The wording follows the sources used (asking, transaction or both): `src/js/report.js:325` (`ctx.priceKind =`).
   The scope, the selection criteria, the sample and the market text speak of comparables, not of offers, and the
   negotiation sentence of the market text is left out when all prices are closing prices:
   `src/js/report_i18n.js:590` (`c.priceKind === 'closed' ? '' :`).
@@ -102,7 +102,7 @@ Severity:
 
 - **What happens.** For these estimators the half-width is the mean's, t · s / √n, centred on the chosen estimator:
   `src/js/engine.js:402` (`const half = useW`).
-- **Status: partly fixed.** The method chapter of the report states the approximation: `src/js/report.js:791` (`X.approx`).
+- **Status: partly fixed.** The method chapter of the report states the approximation: `src/js/report.js:896` (`X.approx`).
   An interval suited to these estimators (for example by resampling) remains to be done.
 
 ## F-08 — Rounding steps that do not depend on the currency
@@ -111,7 +111,7 @@ Severity:
   uncertainty page to 1,000, whatever the currency.
 - **Status: fixed.** The listing price is rounded to five rounding steps of the valuation:
   `src/js/engine.js:236` (`const listingStep`). The figures of the uncertainty page use the rounding step:
-  `src/js/report.js:976` (`function uncertaintyKpis`).
+  `src/js/report.js:1081` (`function uncertaintyKpis`).
 
 ## F-09 — Spain-specific texts and rules used in every country
 
@@ -163,7 +163,7 @@ Severity:
 - **What happened (pre-release).** The report printed the weights of the approaches but not why they were chosen. The
   Spanish order requires stated and justified weights for comparables (art. 22.1.d of [ES-ECO805]); the international
   standards are understood to expect the reconciliation to be explained (content to be verified, Part 4).
-- **Status: fixed.** A field for the valuer's reasoning, printed in the report (`src/js/report.js:1036` (`X.reasonTitle`)),
+- **Status: fixed.** A field for the valuer's reasoning, printed in the report (`src/js/report.js:1141` (`X.reasonTitle`)),
   and a quality check when another approach is used without it: `src/js/review.js:176` (`'method-reconciliation'`).
 
 ## F-15 — Spanish useful-area definition outdated
@@ -224,7 +224,7 @@ Each card in [countries/](countries/README.md) ends with its corrections. In sum
   `annexOverride` and `kOverride` of a comparable, which the editor does not show. On the demo, two overrides moved the
   value from 518,000 to 535,000 without any sign in the app or the report.
 - **Status: fixed.** The AI tools can no longer write them: `src/js/aitools.js:229` (`(kOverride`). Overrides set
-  in a file are marked with an asterisk in the adjustment table of the report (`src/js/report.js:881` (`ovr' : ''`)) and listed
+  in a file are marked with an asterisk in the adjustment table of the report (`src/js/report.js:986` (`ovr' : ''`)) and listed
   by the quality review: `src/js/review.js:169` (`'method-overrides'`).
 
 ## F-21 — Values without a sales-comparison basis
@@ -237,7 +237,7 @@ Each card in [countries/](countries/README.md) ends with its corrections. In sum
   - The warnings say what happens: `src/js/engine.js:436` (`'invalid_area'`) and `src/js/engine.js:407` (`'insufficient'`).
   - A value from the other approaches alone is allowed, with that warning.
   - The range is shown only when the sales comparison enters the value: `src/js/engine.js:448` (`marketInValue =`).
-    Without it the letter, the summary and the result print no interval: `src/js/report.js:481` (`T.rangeLabel(ci)`).
+    Without it the letter, the summary and the result print no interval: `src/js/report.js:586` (`T.rangeLabel(ci)`).
 
 ## F-22 — The confidence interval is presented as the property's value range
 
@@ -265,7 +265,7 @@ Each card in [countries/](countries/README.md) ends with its corrections. In sum
   consistent with one another, confirming the robustness of the estimate», whatever their values, and that the total
   unit value «is consistent with» the municipal asking price once the negotiation margin is deducted.
 - **Status: fixed.** The text states the largest difference between the estimators and, above 5%, refers to the
-  sensitivity analysis; the municipal asking price is given for reference only: `src/js/report.js:309` (`estSpread: PCT`).
+  sensitivity analysis; the municipal asking price is given for reference only: `src/js/report.js:390` (`estSpread: PCT`).
 
 ## F-26 — The Spanish area definitions are shown for every country
 

@@ -9,12 +9,12 @@ was carried out. Code references point to this version of the repository.
 ### The report
 
 - **«Methodology» chapter.** It already describes the steps, the factors and the controls:
-  `src/js/report.js:727` (`function pMethod`). Its texts are partly wrong (findings F-04 to F-06 and F-11), and it does
+  `src/js/report.js:832` (`function pMethod`). Its texts are partly wrong (findings F-04 to F-06 and F-11), and it does
   not say where the δ values come from.
 - **«Sources and references consulted» list.** It names the market data and the comparables:
-  `src/js/report.js:1098` (`const sources`). It does not name the standards, the national rules or the literature
+  `src/js/report.js:1203` (`const sources`). It does not name the standards, the national rules or the literature
   behind the method.
-- **Client preset.** It hides the method chapter, the uncertainty analysis and the sources: `src/js/report.js:118`
+- **Client preset.** It hides the method chapter, the uncertainty analysis and the sources: `src/js/report.js:119`
   (`client:`). A client receives only the short description of the approach in the letter.
 
 ### The app
@@ -151,11 +151,11 @@ change.
 | Step | Where |
 |---|---|
 | 1 | `src/js/engine.js:226` (`function negotiationDefault`), `src/js/appcore.js:337` (`marketConfirmed: false`), `src/js/aitools.js:229` (`(kOverride`), `src/js/engine.js:396` (`ESTIMATORS.includes`) |
-| 2 | `src/js/report.js:958` (`function sensitivityRows`), `src/js/engine.js:236` (`const listingStep`), `src/js/engine.js:448` (`marketInValue =`); the interval is called «confidence interval of the estimate» |
+| 2 | `src/js/report.js:1063` (`function sensitivityRows`), `src/js/engine.js:236` (`const listingStep`), `src/js/engine.js:448` (`marketInValue =`); the interval is called «confidence interval of the estimate» |
 | 3 | report texts in English, Spanish and Italian ([6-code-findings.md](6-code-findings.md) gives each anchor) |
 | 4 | the standards are cited by title; the citations that could not be verified were removed (F-16) |
-| 5 | `src/js/references.js:27` (`const REFERENCES`), generated from [5-bibliography.md](5-bibliography.md); the report page `src/js/report.js:1113` (`function pRefs`) |
-| 6 | `src/js/method.js:38` (`function facts`); the technical page `src/js/report.js:807` (`function pMethodApplied`) and the client page `src/js/report.js:818` (`function pMethodShort`); the reasoning of the weights `src/js/review.js:176` (`'method-reconciliation'`) |
+| 5 | `src/js/references.js:27` (`const REFERENCES`), generated from [5-bibliography.md](5-bibliography.md); the report page `src/js/report.js:1218` (`function pRefs`) |
+| 6 | `src/js/method.js:38` (`function facts`); the technical page `src/js/report.js:912` (`function pMethodApplied`) and the client page `src/js/report.js:923` (`function pMethodShort`); the reasoning of the weights `src/js/review.js:176` (`'method-reconciliation'`) |
 | 7 | `src/js/editor.js:1541` (`function methodPanel`), `src/js/editor.js:1548` (`function sourcesPanel`), `src/js/review.js:149` (`'method-market'`), `src/js/engine.js:238` (`function factorOrigin`) |
 | 8 | `tests/methodology-docs.test.js` |
 | 9 | F-18, F-17 and F-24 fixed; F-13 and F-07 stated in the method chapter (partly fixed) |

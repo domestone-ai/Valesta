@@ -92,7 +92,7 @@ Cleansing turns each comparable's price into the probable price of the dwelling 
    `src/js/data.js:161` (`negotiationDefault`);
 4. 1.00, when no valid default is set: `src/js/engine.js:226` (`function negotiationDefault`), used by the engine
    (`src/js/engine.js:314` (`const negDefault`)), by the Monte Carlo (`src/js/engine.js:569` (`const neg0 = negotiationDefault`)) and by
-   the report (`src/js/report.js:271` (`MCA().negotiationDefault`)).
+   the report (`src/js/report.js:352` (`MCA().negotiationDefault`)).
 
 In the pre-release code the report and the Monte Carlo assumed 0.94 when the setting was missing, while the engine used
 1.00 (finding F-01 in [6-code-findings.md](6-code-findings.md), fixed). The setting can still go missing inside the app:
@@ -334,7 +334,7 @@ one cannot be computed, the weighted mean is used: `src/js/engine.js:397` (`unit
   statistics, known as definition 7 in [HYNDMAN-FAN-1996] (content to be verified). See `src/js/engine.js:142`
   (`quantileInc`).
 - **The report's sensitivity table** shows the value under each estimator, computed by the engine with deductions and
-  reconciliation: `src/js/report.js:958` (`function sensitivityRows`) (finding F-03, fixed).
+  reconciliation: `src/js/report.js:1063` (`function sensitivityRows`) (finding F-03, fixed).
 
 ## 1.11 Dispersion, reliability and confidence interval
 
