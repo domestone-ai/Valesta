@@ -74,6 +74,8 @@ async function session(t) {
   return { page, outside, errors };
 }
 const goStep = async (page, step) => {
+  // After a change of the window size the layout settles in the next frame: wait two frames before reading it.
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   if (await page.evaluate(() => document.getElementById('app').dataset.nav === 'drawer' && !document.getElementById('side').classList.contains('open'))) {
     await page.click('.step-strip [data-nav-toggle]');
     await page.waitForSelector('#side.open [data-step]');
