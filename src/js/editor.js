@@ -602,7 +602,7 @@
     identity: () => identityCard() + tabPratica(), features: () => tabImmobile(), areas: () => tabSuperfici(), photos: () => tabFoto(),
     comps: () => tabComparabili(), marketdata: () => tabMercato('data'), sources: () => tabMercato('sources'),
     adjust: () => tabOmog(), methods: () => tabMetodi(), result: () => tabRisultato() + toolNote(), checks: () => tabVerifiche() + qualityCard() + robustnessCard(),
-    content: () => tabTesti() + tabDesign('content'), style: () => tabDesign('style') + tabAgenzia(true), deliver: () => tabConsegna() + toolNote(),
+    content: () => tabTesti() + tabDesign('content'), style: () => profileBar() + tabDesign('style') + tabAgenzia(true), deliver: () => tabConsegna() + toolNote(),
   };
   function stepHeader(id) {
     const pos = Workflow.position(id);
@@ -1608,25 +1608,92 @@
   function profileCard(p) {
     const pr = p.profile || {};
     const b = pr.brand || {};
-    const d = pr.design || {};
+    const d = Report.designOf({ design: pr.design || {} });
     const inUse = state.brand && state.brand.profileId === p.id;
     const isDef = defaultProfileId() === p.id;
     const primary = isHex(b.primary) ? b.primary : '#0E5A4E';
     const accent = isHex(b.accent) ? b.accent : '#1A8A47';
     const logo = b.logoMode === 'custom' && AppCore.isSafeLogo(b.logoLight) ? `<img src="${esc(b.logoLight)}" alt="">`
-      : `<span class="prof-word" style="font-family:${esc(Report.FONT_STACKS[Report.designOf({ design: d }).fontHead] || '')};color:${primary}">${esc(b.name || p.label)}</span>`;
+      : `<span class="prof-word" style="font-family:${esc(Report.FONT_STACKS[d.fontHead] || '')};color:${primary}">${esc(b.name || p.label)}</span>`;
     return `<div class="prof${inUse ? ' on' : ''}"><div class="prof-logo">${logo}</div>
       <div class="prof-meta"><b>${esc(p.label || pr.name || '')}</b><span>${esc([d.fontHead, d.fontBody].filter(Boolean).join(' · '))}</span>
         <span class="prof-tags"><i class="sw" style="background:${primary}"></i><i class="sw" style="background:${accent}"></i>${p.builtin ? `<em>${esc(t('profBuiltin'))}</em>` : `<em class="mine">${esc(t('profMine'))}</em>`}${isDef ? `<em class="def">★ ${esc(t('profDefault'))}</em>` : ''}</span></div>
-      <div class="prof-actions">${inUse ? `<span class="prof-inuse">✓ ${esc(t('profInUse'))}</span>` : btn('prof-use', esc(t('profUse')), { id: p.id, cls: 'btn-primary' })}${isDef ? '' : btn('prof-default', esc(t('profMakeDefault')), { id: p.id })}${p.builtin ? btn('prof-dup', esc(t('profDup')), { id: p.id }) : btn('prof-del', esc(t('profDel')), { id: p.id, cls: 'btn-danger' })}${btn('prof-export', esc(t('profExport')), { id: p.id })}</div></div>`;
+      <div class="prof-actions">${inUse ? `<span class="prof-inuse">✓ ${esc(t('profInUse'))}</span>` : btn('prof-use', esc(t('profUse')), { id: p.id, cls: 'btn-primary' })}${isDef ? '' : btn('prof-default', esc(t('profMakeDefault')), { id: p.id })}${p.builtin ? '' : btn('prof-rename', esc(t('profRename')), { id: p.id })}${btn('prof-dup', esc(t('profDup')), { id: p.id })}${btn('prof-export', esc(t('profExport')), { id: p.id })}${p.builtin ? '' : btn('prof-del', esc(t('profDel')), { id: p.id, cls: 'btn-danger' })}</div></div>`;
+  }
+  // The design as the report reads it (defaults, older font names): equal looks compare equal.
+  const readDesign = (d) => Report.designOf({ design: d });
+  // The profile in use, above the style step: its name, whether the valuation still looks like it, how to save it.
+  // Included examples do not change: their changes are saved as a new profile.
+  function profileState() {
+    const p = findProfile(state.brand && state.brand.profileId);
+    if (!p) return { p: null, key: 'none' };
+    return { p, key: AppCore.profileChanged(state, p.profile, readDesign) ? 'dirty' : p.builtin ? 'example' : 'saved' };
+  }
+  const profileStateText = (key) => ({ saved: '✓ ' + t('pbSaved'), dirty: '● ' + t('pbDirty'), example: t('pbExample') }[key] || '');
+  function profileBar() {
+    const { p, key } = profileState();
+    const own = !!p && !p.builtin;
+    const main = key === 'dirty' ? (own ? 'prof-save' : 'prof-new') : '';
+    return `<section class="card prof-bar" data-live="prof-bar" data-state="${key}" aria-label="${esc(t('pbInUse'))}">
+      <div class="pb-main"><span class="pb-k">${esc(t('pbInUse'))}</span><b class="pb-name">${esc(p ? p.label : t('pbNone'))}</b>
+        <span class="pb-state" data-live="prof-state" role="status">${esc(profileStateText(key))}</span></div>
+      <div class="row-actions pb-actions">${own ? btn('prof-save', esc(t('pbSave')), { cls: main === 'prof-save' ? 'btn-primary' : '' }) : ''}${btn('prof-new', esc(t('pbSaveNew')), { cls: main === 'prof-new' ? 'btn-primary' : '' })}${own ? btn('prof-rename', esc(t('profRename')), { id: p.id }) : ''}</div>
+      <p class="hint pb-hint">${esc(t('pbHint'))}</p></section>`;
+  }
+  // After a change of a field (no new render): the state of the bar and its main button follow.
+  function syncProfileBar() {
+    const bar = $('[data-live="prof-bar"]');
+    if (!bar) return;
+    const { p, key } = profileState();
+    if (bar.dataset.state === key) return;
+    bar.dataset.state = key;
+    const st = bar.querySelector('[data-live="prof-state"]');
+    if (st) st.textContent = profileStateText(key);
+    const main = key === 'dirty' ? (p && !p.builtin ? 'prof-save' : 'prof-new') : '';
+    bar.querySelectorAll('.pb-actions .btn').forEach((b) => b.classList.toggle('btn-primary', b.dataset.action === main));
+  }
+  // A proposed name that no profile has yet.
+  const freeLabel = (name) => (allProfiles().some((p) => p.label === name) ? t('profCopyName')(name) : name);
+  const refocus = (sel) => { const el = $('#tab-body ' + sel); if (el) el.focus(); };
+  // A name asked in the app's own window (the desktop app has no window.prompt). Enter or "Save" give the name, trimmed
+  // and at most 80 characters; Escape, ✕, "Cancel" or a click outside give null.
+  let nameWait = null;
+  function askName(title, value) {
+    if (nameWait) { const w = nameWait; nameWait = null; w(null); }
+    const dlg = $('#dlg');
+    dlg.classList.add('dlg-small');
+    dlg.setAttribute('aria-labelledby', 'dlg-title');
+    dlg.innerHTML = `<form class="name-form" method="dialog" data-name-form>
+      <div class="dlg-head"><h2 id="dlg-title">${esc(title)}</h2><button type="button" class="btn btn-icon" data-action="dlg-close" aria-label="${esc(t('bClose'))}">✕</button></div>
+      <div class="dlg-body"><label class="fld"><span>${esc(t('profNamePrompt'))}</span><input type="text" id="dlg-name" maxlength="80" autocomplete="off" required value="${esc(value || '')}"></label></div>
+      <div class="dlg-foot"><span class="grow"></span><button type="button" class="btn" data-action="dlg-close">${esc(t('cancel'))}</button><button type="submit" class="btn btn-primary">${esc(t('bSave'))}</button></div></form>`;
+    if (!dlg.open) { if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', ''); }
+    const input = $('#dlg-name');
+    input.focus();
+    input.select();
+    return new Promise((resolve) => { nameWait = resolve; });
+  }
+  function nameSubmit(e) {
+    if (!e.target.matches('[data-name-form]')) return;
+    e.preventDefault();
+    const input = $('#dlg-name');
+    const v = input.value.trim().slice(0, 80);
+    if (!v) { input.focus(); return; }
+    const w = nameWait;
+    nameWait = null;
+    closeDialog();
+    if (w) w(v);
+  }
+  function nameClosed() {
+    $('#dlg').classList.remove('dlg-small');
+    if (nameWait) { const w = nameWait; nameWait = null; w(null); }
   }
   function tabAgenzia(noAdvisor) {
     const b = 'brand';
     const o = 'meta.office';
     const mode = state.brand.logoMode === 'custom' ? 'custom' : 'text';
-    const cur = findProfile(state.brand.profileId);
     return card(t('profLibT'), `<p class="hint" style="margin:0 0 10px">${esc(t('profLibHint'))}</p><div class="prof-grid">${allProfiles().map(profileCard).join('')}</div>
-      <div class="row-actions">${btn('prof-new', esc(t('profNew')), { cls: 'btn-primary' })}${cur && !cur.builtin ? btn('prof-save', esc(t('profSave')(cur.label))) : ''}${btn('profile-import', esc(t('profileImport')))}</div>
+      <div class="row-actions">${btn('prof-new', esc(t('profNew')))}${btn('profile-import', esc(t('profileImport')))}</div>
       <p class="hint" style="margin:8px 0 0">${esc(t('profTrademark'))}</p>`) +
       card(t('brandT'), `<div class="grid">
       ${fText(b + '.name', t('brandName'))}${fSel(b + '.logoMode', t('logoMode'), [['text', t('logoText')], ['custom', t('logoCustom')]])}</div>
@@ -1747,6 +1814,7 @@
   // ---------- live refresh (no input re-render) ----------
   function refreshLive() {
     syncMap();
+    syncProfileBar();
     $$('[data-live="rooms-total"]').forEach((el) => { el.textContent = res.usefulArea != null ? N(res.usefulArea, 2) + ' m²' : '—'; });
     $$('[data-live="ref-area"]').forEach((el) => { el.textContent = res.refArea != null ? N(res.refArea, res.refArea % 1 ? 2 : 0) + ' m²' : '—'; });
     $$('[data-live="poi-d"]').forEach((el) => {
@@ -2320,7 +2388,15 @@
       case 'prof-dup': {
         const p = findProfile(b.dataset.id);
         if (!p) return;
-        putProfile({ id: newProfileId(), label: `${p.label} (2)`, profile: AppCore.clone(p.profile) }).then(() => { renderTab(); toast(t('toastProfSaved')); });
+        askName(t('dlgDupT')(p.label), freeLabel(t('profCopyName')(p.label))).then((label) => label && putProfile({ id: newProfileId(), label, profile: Object.assign(AppCore.clone(p.profile), { name: label }) })
+          .then(() => { renderTab(); refocus(`[data-action="prof-dup"][data-id="${p.id}"]`); toast(t('toastProfSaved')); }));
+        return;
+      }
+      case 'prof-rename': {
+        const p = findProfile(b.dataset.id);
+        if (!p || p.builtin) return;
+        askName(t('dlgRenameT')(p.label), p.label).then((label) => label && label !== p.label && putProfile({ id: p.id, label, profile: Object.assign(AppCore.clone(p.profile), { name: label }) })
+          .then(() => { renderTab(); refocus('.prof-bar [data-action="prof-rename"]'); toast(t('toastProfRenamed')); }));
         return;
       }
       case 'prof-del': {
@@ -2336,17 +2412,20 @@
         return;
       }
       case 'prof-new': {
-        const name = prompt(t('profNamePrompt'), state.brand.name || '');
-        if (!name || !name.trim()) return;
-        const id = newProfileId();
-        state.brand.profileId = id;
-        putProfile({ id, label: name.trim(), profile: Object.assign(AppCore.makeProfile(state), { name: name.trim() }) }).then(() => { changed(true); toast(t('toastProfSaved')); });
+        const cur = findProfile(state.brand.profileId);
+        askName(t('dlgNewT'), freeLabel(state.brand.name || (cur && cur.label) || '')).then((label) => {
+          if (!label) return null;
+          const id = newProfileId();
+          state.brand.profileId = id;
+          return putProfile({ id, label, profile: Object.assign(AppCore.makeProfile(state), { name: label }) })
+            .then(() => { changed(true); refocus('.prof-bar [data-action="prof-new"]'); toast(t('toastProfSaved')); });
+        });
         return;
       }
       case 'prof-save': {
         const p = findProfile(state.brand.profileId);
         if (!p || p.builtin) return;
-        putProfile({ id: p.id, label: p.label, profile: Object.assign(AppCore.makeProfile(state), { name: p.label }) }).then(() => { renderTab(); toast(t('toastProfSaved')); });
+        putProfile({ id: p.id, label: p.label, profile: Object.assign(AppCore.makeProfile(state), { name: p.label }) }).then(() => { renderTab(); refocus('.prof-bar [data-action="prof-save"]'); toast(t('toastProfSaved')); });
         return;
       }
       default:
@@ -2874,6 +2953,8 @@
     liveDetect();
     // First start on this device: the privacy window asks which outside services to use (Esc counts as closing it).
     $('#dlg').addEventListener('close', privacyNoticeDone);
+    $('#dlg').addEventListener('close', nameClosed);
+    $('#dlg').addEventListener('submit', nameSubmit);
     if (!readJson(NOTICE_KEY)) openPrivacy(true);
     window.__valesta = { get state() { return state; }, get result() { return res; }, get fit() { return lastFit; }, get step() { return step; }, get screen() { return screen; }, checkOverflow, fitAndCheck, setView, setUiLang, undo, redo, buildReportHtml, goStep, goHome, goStart, openPalette };
   }

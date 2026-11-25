@@ -1291,3 +1291,14 @@ test('page logo: small, medium or large in the page headers; medium by default',
   const sheet = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'css', 'report.css'), 'utf8');
   assert.match(sheet, /\.pg-head \.brand-logo \{ height: var\(--hl, 7mm\); \}/);
 });
+
+test('profiles: the demo looks like the Valesta profile when the design is read as the report reads it', () => {
+  const AppCore = require('../src/js/appcore.js');
+  const Profiles = require('../src/js/profiles.js');
+  const read = (d) => Report.designOf({ design: d });
+  const demo = fresh();
+  assert.equal(demo.brand.profileId, 'valesta');
+  assert.equal(AppCore.profileChanged(demo, Profiles.get('valesta').profile, read), false);
+  demo.design.fontHead = 'Montserrat';
+  assert.equal(AppCore.profileChanged(demo, Profiles.get('valesta').profile, read), true);
+});

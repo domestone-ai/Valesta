@@ -594,6 +594,17 @@ table.edt .x { width: 40px; text-align: center; }
 .prof-tags em.def { background: var(--ui-warn-50); color: var(--ui-warn); }
 .prof-actions { padding: 6px 12px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: auto; }
 .prof-inuse { font-size: 13px; font-weight: 600; color: var(--ui-green); padding: 0 4px; }
+/* the profile in use, above the style step (editor.js profileBar): name, state, how to save */
+.prof-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 20px; padding: 16px 20px; }
+.pb-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.pb-k { font-size: 12px; font-weight: 600; color: var(--ui-muted); }
+.pb-name { font-size: 16px; overflow-wrap: anywhere; }
+.pb-state { font-size: 13px; font-weight: 600; color: var(--ui-muted); }
+.prof-bar[data-state="saved"] .pb-state { color: var(--ui-green); }
+.prof-bar[data-state="dirty"] .pb-state { color: var(--ui-warn); }
+.pb-actions { margin: 0; justify-content: flex-end; gap: 8px; }
+.pb-hint { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 760px) { .prof-bar { grid-template-columns: 1fr; } .pb-actions { justify-content: flex-start; } }
 
 /* ---------- context panel: preview, AI, checks ---------- */
 .ctx-tabs { display: flex; align-items: center; border-bottom: 1px solid var(--ui-border); padding: 0 8px; flex: 0 0 auto; }
@@ -1025,6 +1036,9 @@ body.resizing .pv-scroll, body.resizing .main { pointer-events: none; }
 .priv .row-actions a.hint { font-size: 12px; }
 .dlg-foot { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--ui-border); background: var(--ui-panel); }
 .dlg-foot .btn { min-height: 40px; }
+/* a small window (a name): centred and not full screen, also on a phone */
+.dlg.dlg-small { width: min(460px, calc(100vw - 24px)); max-width: calc(100vw - 24px); height: fit-content; max-height: min(80vh, 760px); border-radius: 16px; margin: auto; }
+.dlg-small .dlg-body .fld input { width: 100%; }
 .geo-custom { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .geo-custom input { flex: 1 1 220px; min-height: 34px; border: 1px solid var(--ui-line-2); background: var(--ui-field); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; }
 .geo-msg { font-size: 13px; color: var(--ui-muted); margin: 0; padding: 8px 12px; background: var(--ui-surface-2); border-radius: 8px; }

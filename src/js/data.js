@@ -48,7 +48,7 @@
         'Property valuation with the sales comparison approach'),
     },
     design: {
-      preset: 'full', fontHead: 'Playfair Display', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded', ink: '#1A2229',
+      preset: 'full', fontHead: 'Cormorant Garamond', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded', ink: '#1A2229',
       coverStyle: 'map', autoFit: true, watermark: '', watermarkText: '', footerNote: '', pageNumbers: true,
       sections: { summary: true, toc: true, letter: true, scope: true, location: true, description: true, surfaces: true, market: true, method: true,
         sample: true, cards: true, homog: true, homogChart: true, result: true, sensitivity: true, uncertainty: true, photos: true, hypotheses: true,

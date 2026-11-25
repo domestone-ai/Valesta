@@ -505,3 +505,78 @@ test('review fix C1: a saved valuation keeps its other approaches, their weights
   assert.equal(hostile.state.approaches.extra, undefined);
   assert.equal(hostile.state.approaches.income, undefined);
 });
+
+test('agency profile: applying a profile replaces the look; the report choices of the valuation stay', () => {
+  const Profiles = require('../src/js/profiles.js');
+  const st = fresh();
+  st.design.cover = { bg: { type: 'solid', c1: '#ffffff' }, logo: { size: 20 } };
+  st.design.headerLogo = 'L';
+  st.design.textScale = 1.1;
+  st.design.preset = 'client';
+  st.design.sections.toc = false;
+  st.design.watermark = 'draft';
+  const example = Profiles.get('valesta').profile;
+  const r = AppCore.applyProfile(st, example);
+  assert.equal(r.ok, true);
+  const d = r.state.design;
+  assert.equal(d.cover, undefined, 'the cover of the previous look does not stay');
+  assert.equal(d.headerLogo, undefined);
+  assert.equal(d.textScale, undefined);
+  assert.equal(d.fontHead, 'Cormorant Garamond');
+  assert.equal(d.coverStyle, 'map');
+  assert.equal(d.preset, 'client', 'the report model of the valuation stays');
+  assert.equal(d.sections.toc, false);
+  assert.equal(d.watermark, 'draft');
+  d.fontHead = 'Changed';
+  assert.equal(example.design.fontHead, 'Cormorant Garamond', 'the profile is not changed through the valuation');
+});
+
+test('agency profile: profileChanged says when the brand, the agency, the look or the own chapters differ from the profile', () => {
+  const base = fresh();
+  const prof = AppCore.makeProfile(base);
+  const copy = () => JSON.parse(JSON.stringify(base));
+  assert.equal(AppCore.profileChanged(copy(), prof), false, 'just saved');
+  assert.equal(AppCore.profileChanged(copy(), null), false, 'no profile, nothing to compare');
+  // Not compared: the profile id, the valuation data, the advisor, the report choices, empty values, the order of the fields.
+  const same = copy();
+  same.brand.profileId = 'another';
+  same.settings.negotiationDefault = 0.9;
+  same.subject.address = 'Carrer Major 1';
+  same.meta.advisor = { name: 'Other', role: '' };
+  same.design.preset = 'client';
+  same.design.sections.toc = false;
+  same.design.watermark = 'draft';
+  same.design.cover = { logo: {} };
+  same.design.footerNote = '';
+  same.design = Object.fromEntries(Object.entries(same.design).reverse());
+  assert.equal(AppCore.profileChanged(same, prof), false);
+  const edits = [
+    (s) => { s.brand.primary = '#ffffff'; },
+    (s) => { s.meta.office.address = 'Carrer Nou 2'; },
+    (s) => { s.design.cover = { bg: { type: 'solid', c1: '#ffffff' } }; },
+    (s) => { s.design.headerLogo = 'L'; },
+    (s) => { s.customSections = [{ id: 'cs1', enabled: true, after: 'end', title: 'Chi siamo', body: '' }]; },
+  ];
+  edits.forEach((edit, i) => { const s = copy(); edit(s); assert.equal(AppCore.profileChanged(s, prof), true, 'edit ' + i); });
+  // Right after "use profile" the valuation matches it, also when the profile has fewer fields than the valuation.
+  const Profiles = require('../src/js/profiles.js');
+  const example = Profiles.get('example-casa-aurora').profile;
+  const before = copy();
+  before.design.cover = { bg: { type: 'gradient', c1: '#112233', c2: '#445566' } };
+  before.design.headerLogo = 'S';
+  const used = AppCore.applyProfile(before, example).state;
+  assert.equal(AppCore.profileChanged(used, example), false);
+  used.design.headerLogo = 'L';
+  assert.equal(AppCore.profileChanged(used, example), true);
+  // With the design read as the report reads it (defaults, older names), equal looks compare equal.
+  const read = (d) => Object.assign({ textScale: 1, pageNumbers: true }, d, d.fontHead === 'Old Serif' ? { fontHead: 'Literata' } : {});
+  const plain = copy();
+  plain.design.textScale = 1;
+  plain.design.pageNumbers = true;
+  plain.design.fontHead = 'Old Serif';
+  const lit = AppCore.makeProfile(Object.assign(copy(), { design: Object.assign(copy().design, { fontHead: 'Literata' }) }));
+  delete lit.design.textScale;
+  delete lit.design.pageNumbers;
+  assert.equal(AppCore.profileChanged(plain, lit), true, 'without the reader the names differ');
+  assert.equal(AppCore.profileChanged(plain, lit, read), false);
+});

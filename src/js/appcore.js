@@ -453,6 +453,8 @@
   // Valorem 1.1 saved profiles with the kind "valorem-profile": they are still accepted.
   const PROFILE_KINDS = ['valesta-profile', 'valorem-profile'];
   const isProfile = (o) => !!(o && typeof o === 'object' && PROFILE_KINDS.includes(o.kind) && o.brand && typeof o.brand === 'object');
+  // Fields of the design that belong to one valuation (report model, chapters, draft mark), not to the look of the agency.
+  const REPORT_DESIGN = ['preset', 'sections', 'watermark', 'watermarkText'];
   function makeProfile(state) {
     const st = state.settings || {};
     const settings = {};
@@ -476,7 +478,14 @@
       out.meta.advisor = Object.assign({ name: '', role: '' }, profile.advisor);
       if (!isSafeImage(out.meta.advisor.signature)) out.meta.advisor.signature = null;
     }
-    if (profile.design && typeof profile.design === 'object') out.design = Object.assign({}, out.design || {}, profile.design, { sections: Object.assign({}, (out.design || {}).sections || {}, profile.design.sections || {}) });
+    if (profile.design && typeof profile.design === 'object') {
+      // The profile gives the whole look: a field it does not have goes back to its default, so the cover of the previous
+      // look does not stay. The report choices of the valuation stay unless the profile has them.
+      const cur = out.design || {};
+      const keep = {};
+      REPORT_DESIGN.forEach((k) => { if (cur[k] !== undefined) keep[k] = cur[k]; });
+      out.design = Object.assign(keep, clone(profile.design), { sections: Object.assign({}, cur.sections || {}, profile.design.sections || {}) });
+    }
     if (out.design && out.design.coverImage != null && !isSafeImage(out.design.coverImage)) out.design.coverImage = null;
     if (Array.isArray(profile.customSections)) out.customSections = profile.customSections.filter((c) => c && typeof c === 'object' && !Array.isArray(c));
     if (profile.settings && typeof profile.settings === 'object') {
@@ -486,7 +495,34 @@
     if (Array.isArray(profile.factors) && profile.factors.length) out.factors = clone(profile.factors);
     return { ok: true, errors: [], state: out };
   }
+  // Value without empty parts (null, '', empty groups) and with the keys in order, to compare two looks.
+  function lean(v) {
+    if (Array.isArray(v)) return v.map(lean);
+    if (v === null || typeof v !== 'object') return v === '' ? undefined : v;
+    const o = {};
+    Object.keys(v).sort().forEach((k) => { const x = lean(v[k]); if (x !== undefined && x !== null) o[k] = x; });
+    return Object.keys(o).length ? o : undefined;
+  }
+  // The part of a valuation that a profile saves and the style step shows: brand, agency, look and own chapters. Not the
+  // valuation data, the advisor (Contents step) or the report choices: they change from one valuation to the next.
+  function profileLook(state, read) {
+    const s = state || {};
+    const brand = Object.assign({}, s.brand || {});
+    delete brand.profileId;
+    const design = Object.assign({}, read ? read(s.design || {}) : s.design || {});
+    REPORT_DESIGN.forEach((k) => { delete design[k]; });
+    return JSON.stringify(lean({ brand, office: (s.meta || {}).office, design, customSections: s.customSections }) || {});
+  }
+  // True when the valuation looks different from the profile: applying the profile again would change something.
+  // "read" (optional) gives the design as the report reads it (defaults, older font names), so equal looks compare equal.
+  function profileChanged(state, profile, read) {
+    if (!isProfile(profile) || !state) return false;
+    const m = state.meta || {};
+    const light = { brand: state.brand, meta: { office: m.office, advisor: m.advisor }, design: state.design, customSections: state.customSections };
+    const r = applyProfile(light, profile);
+    return !!r.ok && profileLook(light, read) !== profileLook(r.state, read);
+  }
 
   return { parseNum, getPath, setPath, roundingFor, uiLangFor, langsByName, applySuggestions, validateState, blankState, newValuation, setPropertyType, fileName, slug, loadLocal, saveLocal, newComparable, normalizeComp, safeUrl, isSafeImage, isSafeLogo, BLANK_SUBJECT, clone,
-    ensureId, makeProfile, applyProfile, isProfile, normalizeTechnical, normalizeAttachments, syncTechnical, ENERGY_CLASSES, SEISMIC_CLASSES, STRUCTURES, SYSTEMS, SYSTEM_STATUS, ATT_KINDS };
+    ensureId, makeProfile, applyProfile, isProfile, profileChanged, normalizeTechnical, normalizeAttachments, syncTechnical, ENERGY_CLASSES, SEISMIC_CLASSES, STRUCTURES, SYSTEMS, SYSTEM_STATUS, ATT_KINDS };
 });
