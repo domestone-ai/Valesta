@@ -80,8 +80,11 @@ The screenshots show the demo valuation. Its persons, addresses and comparables 
   reconciliation by weights.
 - **Checks.** Document checks (title, easements, planning, cadastre, energy) with the documents of the country, and a
   quality score from A to E.
-- **Reports.** A4 reports in 17 languages, with automatic page fitting, covers, agency profiles (white label), a
-  technical sheet and attached documents. Export to PDF, HTML or a digital file (ZIP).
+- **Reports.** A4 reports in 17 languages, with automatic page fitting, a technical sheet and attached documents.
+  Two report models: one for the client, one for banks and valuers. Export to PDF, HTML or a digital file (ZIP).
+- **Style and brand.** Agency profiles (white label) that you save, rename, duplicate and move to another device as a
+  file. A cover designer with layers (background, shade, pattern, logo and texts) and a contrast check. Font pairs,
+  text size, spacing and the logo of the page headers.
 - **Countries.** The rules of 19 countries: currency, area basis, standards and typical documents. The packs are
   drafts until local professionals validate them.
 - **AI assistant.** It reads documents, photos and dictation and fills the fields. Each change is a proposal that you

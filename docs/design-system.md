@@ -131,8 +131,22 @@ This is an automatic check. Tests with screen readers and with users are still n
   35 %. The table shows the values of the engine and does not calculate them again.
 - **Switch** (`role="switch"`): on, terracotta track with the knob on the right; off, sunken track with a control
   border.
-- **Options with a description** (report model, covers): a name, one line on what it does, `aria-pressed`. The
-  selected option has a border, the selection tint and a tick.
+- **Options with a description** (report models, starting points of the cover, font pairs): a name, one line on what
+  it does, `aria-pressed`. The selected option has a border, the selection tint and a tick.
+- **Section tabs** (Style and brand step): `role="tablist"`. The arrow keys, Home and End move between the tabs; only
+  the selected tab is in the Tab order. The selected tab has an accent line and `aria-selected`. Each section starts
+  with one sentence that says what it does. The device keeps the section (`valesta-style-section`).
+- **Choice rows**: buttons with `aria-pressed`. The selected button has the accent border and the selection tint. A
+  sentence under the row says what the choice does. When the title of the group already names the choice, the row has
+  an accessible name and no visible label.
+- **Sliders**: the value with its unit is next to the slider and changes while the slider moves (mm, %, °).
+- **Colour choice**: swatches for the brand colours (each with an accessible name), then a colour picker and a hex
+  field. A brand colour follows the brand; any other colour stays fixed.
+- **Contrast note** (cover texts): the ratio and a verdict, in ochre below 4.5:1, in a live region (`role="status"`).
+- **Profile bar**: the profile in use, its state (saved, unsaved changes, included example) in a live region, and
+  "Save to the profile", "Save as new…" and "Rename". The main button is the one that saves the changes.
+- **Name window**: a small window, also on a phone. The name field has the focus and its text is selected. Enter
+  saves; Escape, ✕ and "Cancel" close the window without a change.
 - **Paper samples**: the font sample, the logo and a signature image are white also in the dark theme, because they
   show paper.
 - **Field errors**: a message under the field, with `aria-invalid` and `aria-describedby`. It goes away when the value

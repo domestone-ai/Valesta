@@ -5,6 +5,42 @@ This file records the changes of each version of Valesta that users can see.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version numbers follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Style and brand in six sections**: Profile, Report model, Brand, Cover, Type and spacing, Pages. Each section
+  says what it does. The preview shows the page that the section changes. The arrow keys, Home and End move between
+  the sections.
+- **Cover designer with layers**: background (solid colour, gradient between two colours, map or photo), shade,
+  pattern, logo and texts. Four starting points set the layers with one click. Then you can change each layer.
+- **Cover colours**: the main colour, the dark main colour, the accent, white, the text colour or any other colour.
+  The brand colours stay linked to the brand: when you change the brand, the cover follows.
+- **Logo on the cover**: a height from 6 to 30 mm, four positions and a white box for dark backgrounds.
+- **Logo in the page headers**: small, medium or large (5, 7 or 9 mm). The brand band and the stamp follow.
+- **Text colour of the cover**: automatic, light or dark. The automatic colour has the higher contrast on the
+  background. A note shows the contrast and warns below 4.5:1.
+- **Profile bar**: the profile in use and its state (saved, unsaved changes or included example), with Save to the
+  profile, Save as new and Rename.
+- **Rename** a profile. **Duplicate** asks for a name and also copies the included examples.
+- **Type and spacing**: four font pairs, a text size from 85 to 115 %, spacing and corners with an explanation, and a
+  larger sample on paper.
+
+### Changed
+
+- **Report models**: "Client" and "Complete · bank and valuer". The models "Complete" and "Technical" of 1.0.0 open
+  as "Complete · bank and valuer". The chapters that you chose do not change.
+- **Apply a profile** gives the whole look of the profile. A cover or another field of the previous look does not
+  stay. The report model, the chapters and the draft mark of the valuation stay.
+- Valuations and profiles of 1.0.0 open with the same look. Their covers show as layers. Valesta 1.0.0 opens a
+  profile of this version with the nearest cover.
+
+### Fixed
+
+- **New profile** works in the Windows app. The app asks for names in a window of its own.
+- A white cover background stays white. Before, the cover used the main colour made darker, with white texts.
+- The profile cards show the fonts that the report uses.
+
 ## [1.0.0] - 2026-11-24
 
 First public release of **Valesta (Value Estate Assistant)**, the property valuation app of Domestone S.r.l. We
