@@ -23,6 +23,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const zlib = require('node:zlib');
 const { chromium } = require('playwright-core');
 
 const DIST = path.join(__dirname, '..', 'dist');
@@ -80,6 +81,25 @@ const goStep = async (page, step) => {
   await page.click(`#side [data-step="${step}"]`);
   await page.waitForSelector(`#side [data-step="${step}"][aria-current="step"]`, { state: 'attached' });
 };
+
+// The drawing of a PDF made by Chrome: the fill colours ("r g b rg") and the gradients ("scn") of its compressed page
+// streams, read with zlib (no other tool).
+function pdfDrawing(buf) {
+  const s = buf.toString('latin1');
+  const re = /(?<!end)stream\r?\n/g;
+  let m;
+  let txt = '';
+  while ((m = re.exec(s))) {
+    const end = s.indexOf('endstream', m.index);
+    if (end < 0) break;
+    try {
+      const t = zlib.inflateSync(Buffer.from(s.slice(m.index + m[0].length, end), 'latin1'), { finishFlush: zlib.constants.Z_SYNC_FLUSH }).toString('latin1');
+      if (/\b(re|cm|rg)\b/.test(t) && !t.includes('\u0000')) txt += t + '\n';
+    } catch (e) { /* not a page stream: fonts, images */ }
+    re.lastIndex = end + 9;
+  }
+  return { fills: (txt.match(/[-.0-9]+ [-.0-9]+ [-.0-9]+ rg/g) || []).sort(), gradients: (txt.match(/\bscn\b/g) || []).length };
+}
 
 const BAR = '#tab-body .prof-bar';
 const nameWindow = (page) => page.waitForSelector('#dlg[open] #dlg-name');
@@ -288,6 +308,57 @@ test('type and pages: a font pair sets both fonts; the size slider, the spacing 
   await css(/--hl:9mm/);
   for (const p of ['design.footerNote', 'design.watermark', 'design.pageNumbers', 'design.autoFit']) assert.ok(await page.$(`#st-panel [data-bind="${p}"]`), p);
   assert.equal(await page.$eval('#st-panel [data-bind="design.pageNumbers"]', (e) => e.checked), true);
+  assert.deepEqual(outside, []);
+  assert.deepEqual(errors, []);
+});
+
+test('cover designer: every control has a name; a very wide logo at 30 mm stays on the page; the layers print without background graphics', async (t) => {
+  const { page, outside, errors } = await session(t);
+  await goStep(page, 'style');
+  await openSec(page, 'cover');
+  const unnamed = await page.$$eval('#st-panel button, #st-panel input, #st-panel select', (els) => els
+    .filter((e) => !(e.getAttribute('aria-label') || (e.labels && e.labels.length) || e.textContent.trim() || e.title))
+    .map((e) => e.outerHTML.slice(0, 80)));
+  assert.deepEqual(unnamed, [], 'every control of the cover has an accessible name');
+  // A logo ten times wider than high, at the largest size.
+  await openSec(page, 'brand');
+  await page.selectOption('#st-panel [data-bind="brand.logoMode"]', 'custom');
+  await page.waitForSelector('#st-panel [data-action="logo-upload"][data-key="logoLight"]');
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="100" viewBox="0 0 1200 100"><rect width="1200" height="100" fill="#123456"/></svg>';
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('#st-panel [data-action="logo-upload"][data-key="logoLight"]')]);
+  await chooser.setFiles({ name: 'wide-logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) });
+  await page.waitForFunction(() => !!window.__valesta.state.brand.logoLight);
+  await openSec(page, 'cover');
+  await page.click('#st-panel [data-action="cv-start"][data-key="minimal"]');
+  await slide(page, '#st-panel input[data-bind="design.cover.logo.size"]', 30);
+  await page.waitForFunction(() => /--cv-logo-h:\s*30mm/.test(document.querySelector('#report .page--cover').getAttribute('style')));
+  await page.waitForFunction(() => { const i = document.querySelector('#report .page--cover .brand-logo img'); return i && i.complete && i.getBoundingClientRect().width > 0; });
+  const box = await page.evaluate(() => {
+    const p = document.querySelector('#report .page--cover').getBoundingClientRect();
+    const i = document.querySelector('#report .page--cover .brand-logo img').getBoundingClientRect();
+    return { mm: 210 / p.width, left: i.left - p.left, right: p.right - i.right, w: i.width };
+  });
+  assert.ok(box.w * box.mm <= 100.5, `at most 100 mm wide (${(box.w * box.mm).toFixed(1)} mm)`);
+  assert.ok(box.left >= 0 && box.right >= 0, 'inside the page');
+  // PDF without "background graphics": the layers of the cover still print (print-color-adjust on the pages). Compared:
+  // the gradients and the fill colours that page 1 draws, with and without background graphics. Only the white of the
+  // canvas outside the pages may drop.
+  await page.click('#st-panel [data-action="cv-set"][data-key="bg.type"][data-val="gradient"]');
+  await page.click('#st-panel [data-action="cv-set"][data-key="motif.type"][data-val="grid"]');
+  await slide(page, '#st-panel input[data-bind="design.cover.shade.opacity"]', 60);
+  await page.waitForFunction(() => /--cv-so:\s*0?\.6/.test(document.querySelector('#report .page--cover').getAttribute('style')));
+  const html = await page.evaluate(() => window.__valesta.buildReportHtml());
+  const doc = await page.context().newPage();
+  await doc.setContent(html, { waitUntil: 'load' });
+  await doc.evaluate(() => document.fonts.ready);
+  const on = pdfDrawing(await doc.pdf({ format: 'A4', printBackground: true, pageRanges: '1', preferCSSPageSize: true }));
+  const off = pdfDrawing(await doc.pdf({ format: 'A4', printBackground: false, pageRanges: '1', preferCSSPageSize: true }));
+  await doc.close();
+  assert.ok(on.gradients > 0, 'the gradient of the cover is in the PDF');
+  assert.equal(off.gradients, on.gradients, 'the gradient prints without background graphics');
+  const dropped = on.fills.slice();
+  off.fills.forEach((f) => { const i = dropped.indexOf(f); if (i >= 0) dropped.splice(i, 1); });
+  assert.deepEqual(dropped.filter((f) => f !== '1 1 1 rg'), [], 'every colour of the cover prints without background graphics');
   assert.deepEqual(outside, []);
   assert.deepEqual(errors, []);
 });

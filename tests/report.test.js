@@ -1316,3 +1316,17 @@ test('cover options: the editor offers the choices that the report reads', () =>
   assert.ok(Object.isFrozen(O));
   for (const motif of O.motifs) assert.equal(Report.coverModel({ cover: { bg: { type: 'solid' }, motif: { type: motif } } }).motif.type, motif);
 });
+
+test('cover rendering: a map or a photo without shade gets dark texts, no white box, and a contrast warning in the editor', () => {
+  for (const type of ['map', 'photo']) {
+    const st = fresh();
+    st.design.cover = { bg: { type }, shade: { opacity: 0 } };
+    const c = coverOf(st);
+    assert.ok(c.cls.includes('cv-txt-dark'), `${type}: dark texts`);
+    assert.ok(!c.body.includes('brand-logo--pill'), `${type}: no white box behind the logo`);
+    assert.ok(c.style.includes('--cv-so:0;'), `${type}: no shade`);
+    const ink = Report.coverInk(Report.coverModel(st.design), Report.palette(st.brand), Report.designOf(st));
+    assert.equal(ink.dark, true);
+    assert.ok(ink.ratio < 4.5, `${type}: the image is not measured, so the editor asks for a shade (${ink.ratio}:1)`);
+  }
+});
