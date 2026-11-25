@@ -1148,3 +1148,12 @@ test('review fix M7: the app names the method without «MCA» and calls the rang
     assert.doesNotMatch(UI[l].resRange(80), /Range|Forchetta|Horquilla/, l);
   }
 });
+
+test('report models: client and complete (bank and valuer); older and unknown names open as complete', () => {
+  assert.deepEqual(Object.keys(Report.PRESETS), ['client', 'full']);
+  assert.equal(Report.DEFAULT_DESIGN.preset, 'full');
+  for (const p of ['complete', 'technical', undefined, 'unknown']) assert.equal(Report.designOf({ design: { preset: p } }).preset, 'full', String(p));
+  assert.equal(Report.designOf({ design: { preset: 'client' } }).preset, 'client');
+  assert.equal(Report.PRESETS.client.letter, undefined, 'the client report keeps the cover letter');
+  assert.deepEqual(Report.PRESETS.full, {}, 'the complete report shows every section');
+});

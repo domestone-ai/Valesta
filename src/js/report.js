@@ -109,18 +109,19 @@
   const LIGHT_COVERS = ['minimal'];
   const SAFE_IMG = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/;
   const WATERMARKS = ['', 'draft', 'confidential', 'custom'];
-  const DEFAULT_DESIGN = { preset: 'complete', fontHead: 'Cormorant Garamond', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded',
+  const DEFAULT_DESIGN = { preset: 'full', fontHead: 'Cormorant Garamond', fontBody: 'Inter', textScale: 1, density: 'normal', radius: 'rounded',
     ink: '#1A2229', coverStyle: 'map', coverImage: null, autoFit: true, watermark: '', watermarkText: '', footerNote: '', pageNumbers: true,
     sections: SECTION_KEYS.reduce((o, k) => { o[k] = true; return o; }, {}) };
-  // Report presets: which blocks each audience gets (missing keys = shown).
+  // Report models: which blocks each audience gets (missing keys = shown). A model sets the sections when the user
+  // picks it; the name only marks the button. "complete" and "technical" (1.0.0) open as "full".
   const PRESETS = {
-    complete: {},
     client: { toc: false, scope: false, surfaces: false, methodDetail: false, cards: false, homog: false, sensitivity: false, uncertainty: false, sources: false, glossary: false },
-    technical: { letter: false },
+    full: {},
   };
   function designOf(state) {
     const d = (state && state.design) || {};
     const out = Object.assign({}, DEFAULT_DESIGN, d);
+    if (!Object.prototype.hasOwnProperty.call(PRESETS, out.preset)) out.preset = 'full';
     out.sections = Object.assign({}, DEFAULT_DESIGN.sections, d.sections || {}, { result: true });
     if (LEGACY_FONTS[out.fontHead]) out.fontHead = LEGACY_FONTS[out.fontHead];
     if (LEGACY_FONTS[out.fontBody]) out.fontBody = LEGACY_FONTS[out.fontBody];
