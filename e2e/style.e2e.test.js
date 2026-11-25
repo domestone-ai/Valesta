@@ -330,15 +330,20 @@ test('cover designer: every control has a name; a very wide logo at 30 mm stays 
   await page.waitForFunction(() => !!window.__valesta.state.brand.logoLight);
   await openSec(page, 'cover');
   await page.click('#st-panel [data-action="cv-start"][data-key="minimal"]');
-  await slide(page, '#st-panel input[data-bind="design.cover.logo.size"]', 30);
-  await page.waitForFunction(() => /--cv-logo-h:\s*30mm/.test(document.querySelector('#report .page--cover').getAttribute('style')));
-  await page.waitForFunction(() => { const i = document.querySelector('#report .page--cover .brand-logo img'); return i && i.complete && i.getBoundingClientRect().width > 0; });
-  const box = await page.evaluate(() => {
-    const p = document.querySelector('#report .page--cover').getBoundingClientRect();
-    const i = document.querySelector('#report .page--cover .brand-logo img').getBoundingClientRect();
-    return { mm: 210 / p.width, left: i.left - p.left, right: p.right - i.right, w: i.width };
-  });
-  assert.ok(box.w * box.mm <= 100.5, `at most 100 mm wide (${(box.w * box.mm).toFixed(1)} mm)`);
+  const logoBox = async (mm) => {
+    await slide(page, '#st-panel input[data-bind="design.cover.logo.size"]', mm);
+    await page.waitForFunction((h) => new RegExp(`--cv-logo-h:\\s*${h}mm`).test(document.querySelector('#report .page--cover').getAttribute('style')), mm);
+    await page.waitForFunction(() => { const i = document.querySelector('#report .page--cover .brand-logo img'); return i && i.complete && i.getBoundingClientRect().width > 0; });
+    return page.evaluate(() => {
+      const p = document.querySelector('#report .page--cover').getBoundingClientRect();
+      const i = document.querySelector('#report .page--cover .brand-logo img').getBoundingClientRect();
+      return { w: (i.width * 210) / p.width, left: i.left - p.left, right: p.right - i.right };
+    });
+  };
+  const at14 = await logoBox(14);
+  assert.ok(at14.w <= 62.5, `at the default height a wide logo is at most 62 mm wide, as in 1.0.0 (${at14.w.toFixed(1)} mm)`);
+  const box = await logoBox(30);
+  assert.ok(box.w <= 90.5, `at most 90 mm wide (${box.w.toFixed(1)} mm)`);
   assert.ok(box.left >= 0 && box.right >= 0, 'inside the page');
   // PDF without "background graphics": the layers of the cover still print (print-color-adjust on the pages). Compared:
   // the gradients and the fill colours that page 1 draws, with and without background graphics. Only the white of the

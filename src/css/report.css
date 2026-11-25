@@ -44,7 +44,8 @@
 .pg-head .brand-logo { height: var(--hl, 7mm); }
 .pg-head .wordmark { font-size: calc(13pt * var(--hl-k, 1) * var(--ts, 1) * var(--fit, 1)); color: var(--brand); }
 .cover-top .brand-logo, .cover-logo-b .brand-logo { height: var(--cv-logo-h, 14mm); }
-.cover-top .brand-logo img, .cover-logo-b .brand-logo img { max-width: min(100mm, calc(var(--cv-logo-h, 14mm) * 5)); }
+/* Width: the 1.0.0 limit (62 mm at 14 mm) grows with the height, up to 90 mm. */
+.cover-top .brand-logo img, .cover-logo-b .brand-logo img { max-width: min(90mm, calc(var(--cv-logo-h, 14mm) * 4.4286)); }
 .cover-top .wordmark, .cover-logo-b .wordmark { font-size: calc(26pt * var(--cv-logo-k, 1) * var(--ts, 1) * var(--fit, 1)); color: #fff; }
 .brand-band .brand-logo { height: calc(9mm * var(--hl-k, 1)); flex: 0 0 auto; }
 .brand-band .wordmark { font-size: calc(15pt * var(--hl-k, 1) * var(--ts, 1) * var(--fit, 1)); color: #fff; }
